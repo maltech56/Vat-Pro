@@ -17,8 +17,8 @@ import * as DocumentPicker from "expo-document-picker";
 import { Picker } from "@react-native-picker/picker";
 import { getToken } from "../src/utils/session";
 
-const API_BASE = "http://localhost:5000/api";
-const FILE_BASE = "http://localhost:5000";
+const API_BASE = "https://vat-pro-backend.onrender.com/api";
+const FILE_BASE = "https://vat-pro-backend.onrender.com/api";
 
 const CATEGORY_OPTIONS = [
   "All",

@@ -42,7 +42,7 @@ export const CompanyProvider = ({ children }) => {
         return;
       }
 
-      const res = await fetch("http://localhost:5000/api/companies/user", {
+      const res = await fetch("https://vat-pro-backend.onrender.com/api/companies/user", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

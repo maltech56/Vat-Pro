@@ -12,7 +12,7 @@ import {
 import { getToken, getSelectedCompany } from "../src/utils/session";
 import { formatCurrency } from "../src/utils/formatters";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://vat-pro-backend.onrender.com/api";
 
 export default function VatReturnsScreen() {
   const [company, setCompany] = useState(null);

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { getToken, getSelectedCompany } from "../src/utils/session";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://vat-pro-backend.onrender.com/api";
 
 export default function AddTransaction({ defaultType = "sale", onSaved }) {
   const [form, setForm] = useState({

@@ -12,7 +12,7 @@ import { getToken } from "../src/utils/session";
 import { useCompany } from "../context/CompanyContext";
 import { formatCurrency } from "../src/utils/formatters";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://vat-pro-backend.onrender.com/api";
 
 export default function VatFilingScreen({ onNavigate }) {
   const { selectedCompany, companyReady } = useCompany();

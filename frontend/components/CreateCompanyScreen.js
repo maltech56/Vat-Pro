@@ -15,7 +15,7 @@ import {
   setSelectedCompany,
 } from "../src/utils/session";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://vat-pro-backend.onrender.com/api";
 
 export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
   const [form, setForm] = useState({

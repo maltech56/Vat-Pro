@@ -1,0 +1,90 @@
+# Query: http://https
+# ContextLines: 1
+
+18 results - 17 files
+
+frontend\app\add-transaction.js:
+  13  
+  14: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  15  
+
+frontend\app\purchases.js:
+  18  
+  19: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  20  
+
+frontend\app\transactions.js:
+  17  import { getSelectedCompany, getToken } from "../src/utils/session";
+  18: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  19  
+
+frontend\app\vat-filing-history.js:
+  18  
+  19: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  20  
+
+frontend\app\vat-filing.js:
+  14  
+  15: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  16  
+
+frontend\app\vat-returns.js:
+  13  
+  14: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  15  
+
+frontend\components\AuditDashboardScreen.js:
+  14  
+  15: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  16  
+
+frontend\components\CompanyBrandingSettings.js:
+  13  
+  14: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  15  
+
+frontend\components\CreateCompanyScreen.js:
+  17  
+  18: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  19  
+
+frontend\components\DocumentsScreen.js:
+  19  
+  20: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  21: const FILE_BASE = "https://vat-pro-backend.onrender.com/api";
+  22  
+
+frontend\components\ImportsScreen.js:
+  20  
+  21: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  22  
+
+frontend\components\RecentTransactions.js:
+  18  
+  19: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  20  
+
+frontend\components\ReportsScreen.js:
+  14  
+  15: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  16  
+
+frontend\components\SettingsScreen.js:
+  19  
+  20: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  21  
+
+frontend\components\VatReturnsScreen.js:
+  14  
+  15: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  16  
+
+frontend\context\CompanyContext.js:
+  44  
+  45:       const res = await fetch("https://vat-pro-backend.onrender.com/apicompanies/user", {
+  46          headers: {
+
+frontend\src\utils\demoseed.js:
+  2  
+  3: const API_BASE = "https://vat-pro-backend.onrender.com/api";
+  4  

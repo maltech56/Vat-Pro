@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useCompany } from "../context/CompanyContext";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://vat-pro-backend.onrender.com/api";
 
 const REPORT_TABS = [
   { key: "summary", label: "Summary" },

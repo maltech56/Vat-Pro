@@ -1,25 +1,23 @@
 import { getToken, forceLogout } from "./session";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://vat-pro-backend.onrender.com/api";
 
-export async function apiFetch(endpoint, options = {}) {
+export const apiFetch = async (endpoint, options = {}) => {
   const token = getToken();
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...(options.headers || {}),
     },
   });
 
-  if (response.status === 401 || response.status === 403) {
-    forceLogout(
-      "Your session has expired or access is no longer valid. Please log in again."
-    );
-    return null;
+  if (res.status === 401 || res.status === 403) {
+    forceLogout();
+    throw new Error("Session expired");
   }
 
-  return response;
-}
+  return res.json();
+};

@@ -18,7 +18,7 @@ import {
   parseImportedAsset,
 } from "../src/utils/importParsers";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://vat-pro-backend.onrender.com/api";
 
 const fetchWithTimeout = async (url, options = {}, timeout = 15000) => {
   const controller = new AbortController();
