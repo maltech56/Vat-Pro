@@ -1,0 +1,51 @@
+const jwt = require("jsonwebtoken");
+
+module.exports = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    // 1. Check if header exists
+    if (!authHeader) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    // 2. Split "Bearer TOKEN"
+    const parts = authHeader.split(" ");
+
+    if (parts.length !== 2 || parts[0] !== "Bearer") {
+      return res.status(401).json({ error: "Invalid authorization format" });
+    }
+
+    const token = parts[1];
+
+    // 3. Verify token
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "your_jwt_secret"
+    );
+
+    // 4. Attach user to request
+    req.user = decoded;
+
+    // 5. Continue
+    next();
+    } catch (error) {
+    console.error("Auth error:", error);
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        error: "Session expired. Please log in again.",
+      });
+    }
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        error: "Invalid token. Please log in again.",
+      });
+    }
+
+    return res.status(401).json({
+      error: "Authentication failed",
+    });
+  }
+};
