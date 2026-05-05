@@ -39,7 +39,14 @@ exports.login = async (req, res) => {
       { expiresIn: "8h" }
     );
 
-    res.json({ token });
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role || "admin",
+      },
+    });
 
   } catch (error) {
     console.error("🔥 LOGIN CRASH:", error);
@@ -60,7 +67,7 @@ exports.changePassword = async (req, res) => {
     }
 
     const result = await pool.query(
-      "SELECT id, password FROM users WHERE id = $1",
+      "SELECT id, email, role, password FROM users WHERE id = $1",
       [userId]
     );
 
@@ -86,12 +93,7 @@ exports.changePassword = async (req, res) => {
     );
 
     return res.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role || "admin",
-      },
+      message: "Password changed successfully",
     });
 
   } catch (error) {
