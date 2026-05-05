@@ -3,7 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 
-const authRoutes = require("./routes/authroutes");
+const authRoutes = require("./routes/authRoutes");
 const companyRoutes = require("./routes/companyRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
@@ -21,9 +21,30 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:8088",
+  "http://localhost:8089",
+  "http://localhost:8090",
+  "http://localhost:3000",
+  "https://vat-pro-backend.onrender.com",
+  process.env.CORS_ORIGIN,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: function (origin, callback) {
+      // Allow tools like Postman, curl, Render health checks, and same-origin requests
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.warn("Blocked by CORS:", origin);
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );
