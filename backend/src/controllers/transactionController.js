@@ -174,8 +174,11 @@ exports.getCompanyTransactions = async (req, res) => {
 
     return res.json(result.rows);
   } catch (err) {
-    console.error("getCompanyTransactions error:", err.message);
-    return res.status(500).json({ error: "Server error" });
+    console.error("getCompanyTransactions error:", err);
+    return res.status(500).json({
+      error: "Server error",
+      details: err.message,
+    });
   }
 };
 

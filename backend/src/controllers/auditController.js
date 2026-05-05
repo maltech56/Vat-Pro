@@ -117,6 +117,7 @@ exports.getAuditDashboard = async (req, res) => {
     console.error("Audit dashboard error:", error);
     return res.status(500).json({
       error: "Failed to load audit dashboard",
+      details: error.message,
     });
   }
 };
