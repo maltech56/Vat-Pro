@@ -32,7 +32,12 @@ export default function Login() {
 
       if (data.token) {
         localStorage.setItem("token", data.token);
+
+      if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        localStorage.removeItem("user");
+      }
         global.token = data.token;
         global.user = data.user;
         router.push("/dashboard");

@@ -1,8 +1,19 @@
 export const getToken = () => localStorage.getItem("token");
 
 export const getUser = () => {
-  const raw = localStorage.getItem("user");
-  return raw ? JSON.parse(raw) : null;
+  try {
+    const user = localStorage.getItem("user");
+
+    if (!user || user === "undefined" || user === "null") {
+      return null;
+    }
+
+    return JSON.parse(user);
+  } catch (error) {
+    console.error("Error parsing user from session:", error);
+    localStorage.removeItem("user");
+    return null;
+  }
 };
 
 export const getSelectedCompany = () => {
