@@ -1,17 +1,18 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
-const isRenderInternalDb =
-  process.env.DATABASE_URL &&
-  process.env.DATABASE_URL.includes(".render.com") === false;
+const databaseUrl = process.env.DATABASE_URL || "";
+
+const isRenderDatabase =
+  databaseUrl.includes("render.com") || databaseUrl.includes("oregon-postgres");
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isRenderInternalDb
-    ? false
-    : {
+  connectionString: databaseUrl,
+  ssl: isRenderDatabase
+    ? {
         rejectUnauthorized: false,
-      },
+      }
+    : false,
 });
 
 pool
