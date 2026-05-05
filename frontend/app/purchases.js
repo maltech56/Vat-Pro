@@ -91,13 +91,18 @@ export default function Purchases() {
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || data.message || "Failed to load purchases");
       }
 
-      const rows = Array.isArray(data) ? data : data.transactions || [];
+      const rows = Array.isArray(data)
+        ? data
+        : Array.isArray(data.transactions)
+          ? data.transactions
+          : [];
+
       setPurchases(rows);
     } catch (error) {
       console.error("Load purchases error:", error);
@@ -261,7 +266,7 @@ export default function Purchases() {
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || data.message || "Failed to update purchase");
@@ -313,7 +318,7 @@ export default function Purchases() {
                 }
               );
 
-              const data = response;
+              const data = await response.json();
 
               if (!response.ok) {
                 throw new Error(
@@ -466,9 +471,8 @@ export default function Purchases() {
           <Text style={styles.countText}>
             {loading
               ? "Loading..."
-              : `${filteredPurchases.length} purchase${
-                  filteredPurchases.length === 1 ? "" : "s"
-                }`}
+              : `${filteredPurchases.length} purchase${filteredPurchases.length === 1 ? "" : "s"
+              }`}
           </Text>
         </View>
 
@@ -781,7 +785,7 @@ export default function Purchases() {
                   style={[
                     styles.inlineOption,
                     editForm.classification === value &&
-                      styles.inlineOptionActive,
+                    styles.inlineOptionActive,
                   ]}
                   onPress={() => updateEditField("classification", value)}
                 >
@@ -789,7 +793,7 @@ export default function Purchases() {
                     style={[
                       styles.inlineOptionText,
                       editForm.classification === value &&
-                        styles.inlineOptionTextActive,
+                      styles.inlineOptionTextActive,
                     ]}
                   >
                     {value}

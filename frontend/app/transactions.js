@@ -158,16 +158,17 @@ export default function TransactionsPage() {
         throw new Error("Server did not return JSON for transactions.");
       }
 
-      const data = response;
+      const data = await response.json();
 
-      if (!Array.isArray(data)) {
-        console.error("Unexpected transactions payload:", data);
-        throw new Error("Transactions response is not an array.");
-      }
+      const safeTransactions = Array.isArray(data)
+        ? data
+        : Array.isArray(data.transactions)
+          ? data.transactions
+          : [];
 
-      setTransactions(data);
-      setFilteredTransactions(data);
-      recomputeSummary(data);
+      setTransactions(safeTransactions);
+      setFilteredTransactions(safeTransactions);
+      recomputeSummary(safeTransactions);
     } catch (error) {
       console.error("Transactions page error:", error);
       setPageError(error.message || "Failed to load transactions.");
