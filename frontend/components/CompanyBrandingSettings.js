@@ -51,7 +51,7 @@ export default function CompanyBrandingSettings({selectedCompany}) {
         }
       );
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to load branding settings");
@@ -108,7 +108,7 @@ export default function CompanyBrandingSettings({selectedCompany}) {
         }
       );
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to save branding settings");

@@ -62,7 +62,7 @@ export default function RecentTransactions({
         },
       });
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch recent transactions");

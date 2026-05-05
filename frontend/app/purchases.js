@@ -91,7 +91,7 @@ export default function Purchases() {
         }
       );
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || data.message || "Failed to load purchases");
@@ -261,7 +261,7 @@ export default function Purchases() {
         }
       );
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || data.message || "Failed to update purchase");
@@ -313,7 +313,7 @@ export default function Purchases() {
                 }
               );
 
-              const data = await response.json();
+              const data = response;
 
               if (!response.ok) {
                 throw new Error(

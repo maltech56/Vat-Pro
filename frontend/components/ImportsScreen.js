@@ -260,7 +260,7 @@ export default function ImportsScreen() {
         throw new Error("Failed to fetch batch details");
       }
 
-      const data = await response.json();
+      const data = response;
 
 
       setSelectedBatch(data.batch);

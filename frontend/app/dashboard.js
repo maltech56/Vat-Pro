@@ -349,7 +349,7 @@ export default function Dashboard() {
     const response = await apiFetch(`/companies/user`);
     if (!response) return;
 
-    const data = await response.json();
+    const data = response;
 
     const companyList = Array.isArray(data) ? data : [];
     setCompanies(companyList);
@@ -407,7 +407,7 @@ export default function Dashboard() {
       const response = await apiFetch(endpoint);
       if (!response) return;
 
-      const data = await response.json();
+      const data = response;
 
       setOverview({
         totalSales: Number(data.totalSales || 0),
@@ -431,7 +431,7 @@ export default function Dashboard() {
 
       if (!response) return;
 
-      const data = await response.json();
+      const data = response;
 
       setAuditSummary({
         unlinkedCount: Number(data.unlinkedCount || 0),
@@ -522,7 +522,7 @@ export default function Dashboard() {
 
         if (!response) return;
 
-        const data = await response.json();
+        const data = response;
 
         const settings = data.settings || null;
 

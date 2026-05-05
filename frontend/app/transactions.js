@@ -158,7 +158,7 @@ export default function TransactionsPage() {
         throw new Error("Server did not return JSON for transactions.");
       }
 
-      const data = await response.json();
+      const data = response;
 
       if (!Array.isArray(data)) {
         console.error("Unexpected transactions payload:", data);

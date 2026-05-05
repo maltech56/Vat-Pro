@@ -9,7 +9,7 @@ export async function loginUser(email, password) {
     body: JSON.stringify({ email, password }),
   });
 
-  const data = await response.json();
+  const data = response;
 
   if (!response.ok) {
     throw new Error(data.error || "Login failed");

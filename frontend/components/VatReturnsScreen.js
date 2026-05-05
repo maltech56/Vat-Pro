@@ -68,7 +68,7 @@ export default function VatReturnsScreen() {
         }
       );
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || data.message || "Failed to load VAT summary");

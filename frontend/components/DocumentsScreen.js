@@ -251,7 +251,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         throw new Error("Documents API did not return JSON.");
       }
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch documents");
@@ -282,7 +282,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         }
       );
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch transactions");
@@ -311,7 +311,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         }
       );
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch audit readiness");
@@ -490,7 +490,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         }
       );
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to unlink document");
@@ -575,7 +575,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         body: formData,
       });
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Upload failed");
@@ -612,7 +612,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         },
       });
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to delete document");

@@ -7,7 +7,7 @@ export const handleApiAuthError = async (response) => {
     let message = "Session expired. Please log in again.";
 
     try {
-      const data = await response.json();
+      const data = response;
       if (data?.error) {
         message = data.error;
       }
@@ -23,7 +23,7 @@ export const handleApiAuthError = async (response) => {
     let message = "Access denied.";
 
     try {
-      const data = await response.json();
+      const data = response;
       if (data?.error) {
         message = data.error;
       }

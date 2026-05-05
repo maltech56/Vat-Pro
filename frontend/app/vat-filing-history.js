@@ -109,7 +109,7 @@ export default function VatFilingHistory() {
         },
       });
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch filings");
@@ -251,7 +251,7 @@ export default function VatFilingHistory() {
         },
       });
 
-      const data = await response.json();
+      const data = response;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch filing details");
@@ -322,7 +322,7 @@ export default function VatFilingHistory() {
                 }
               );
 
-              const data = await response.json();
+              const data = response;
 
               if (!response.ok) {
                 if (data.auditScore !== undefined) {
@@ -389,7 +389,7 @@ export default function VatFilingHistory() {
                 }
               );
 
-              const data = await response.json();
+              const data = response;
 
               if (!response.ok) {
                 throw new Error(data.error || "Delete failed");
@@ -450,7 +450,7 @@ export default function VatFilingHistory() {
           let errorMessage = "Failed to open PDF";
 
           try {
-            const data = await response.json();
+            const data = response;
             errorMessage = data.error || errorMessage;
           } catch {
             // ignore JSON parse error
@@ -756,7 +756,7 @@ export default function VatFilingHistory() {
         let errorMessage = "Failed to export CSV";
 
         try {
-          const data = await response.json();
+          const data = response;
           errorMessage = data.error || errorMessage;
         } catch {
           // ignore JSON parse error
