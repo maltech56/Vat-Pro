@@ -23,7 +23,9 @@ export default function RecentTransactions({
   startDate,
   endDate,
 }) {
+  
   const [transactions, setTransactions] = useState([]);
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -62,7 +64,7 @@ export default function RecentTransactions({
         },
       });
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch recent transactions");
@@ -103,7 +105,7 @@ export default function RecentTransactions({
     <View style={styles.card}>
       <Text style={styles.title}>Recent Transactions</Text>
 
-      {transactions.length === 0 ? (
+      {safeTransactions.length === 0 ? (
         <Text style={styles.empty}>No transactions yet.</Text>
       ) : (
         <ScrollView horizontal={Platform.OS === "web"}>
@@ -129,7 +131,7 @@ export default function RecentTransactions({
               </Text>
             </View>
 
-            {transactions.map((item) => (
+              {safeTransactions.map((item) => (
               <View key={item.id} style={styles.row}>
                 <Text style={[styles.cell, styles.dateCol]}>
                   {formatDate(item.transaction_date)}
