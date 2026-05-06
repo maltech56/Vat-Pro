@@ -29,23 +29,14 @@ exports.getSettings = async (req, res) => {
 
     const company = companyResult.rows[0];
 
-    const result = await pool.query(`
+    const result = await pool.query(
+      `
       SELECT *
-        company_id,
-        default_vat_rate,
-        filing_frequency,
-        vat_due_day,
-        currency,
-        tax_id,
-        primary_color,
-        logo_url,
-        home_screen_title,
-        home_screen_subtitle,
-        default_home_tab,
-        onboarding_complete
       FROM company_settings
       WHERE company_id = $1
-    `, [companyId]);
+      `,
+      [companyId]
+    );
 
     const settings = result.rows[0] || {};
 
@@ -78,11 +69,14 @@ exports.getSettings = async (req, res) => {
         onboardingComplete: settings.onboarding_complete ?? false,
       }
     });
-  } catch (error) {
-    console.error("Error fetching company settings:", error);
-    return res.status(500).json({ error: "Failed to fetch settings" });
-  }
-};
+      } catch (error) {
+        console.error("Error fetching company settings:", error);
+        return res.status(500).json({
+          error: "Failed to fetch settings",
+          details: error.message,
+        });
+      }
+    };
 
 exports.updateSettings = async (req, res) => {
   const { companyId } = req.params;
@@ -306,7 +300,7 @@ exports.updateSettings = async (req, res) => {
       FROM company_settings
       WHERE company_id = $1
       `,
-          [companyId]
+      [companyId]
     );
 
     const company = updatedCompanyResult.rows[0];
