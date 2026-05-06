@@ -281,22 +281,7 @@ exports.updateSettings = async (req, res) => {
 
     const updatedSettingsResult = await pool.query(
       `
-      SELECT
-        company_id,
-        default_vat_rate,
-        filing_frequency,
-        vat_due_day,
-        currency,
-        tax_id,
-        auto_lock_submitted_filings,
-        require_period_confirmation,
-        onboarding_complete,
-        logo_url,
-        home_screen_title,
-        home_screen_subtitle,
-        primary_color,
-        default_home_tab,
-        updated_at
+      SELECT *
       FROM company_settings
       WHERE company_id = $1
       `,
