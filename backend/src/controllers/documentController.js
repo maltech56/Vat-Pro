@@ -25,7 +25,7 @@ exports.getCompanyDocuments = async (req, res) => {
         t.amount,
         t.vat_amount,
         t.description
-      FROM company_documents 
+      FROM company_documents d
       LEFT JOIN transactions t
         ON d.transaction_id = t.id
       WHERE d.company_id = $1
@@ -50,10 +50,12 @@ exports.getCompanyDocuments = async (req, res) => {
 
     const result = await pool.query(query, values);
 
-    res.json(result.rows);
   } catch (error) {
     console.error("getCompanyDocuments error:", error);
-    res.status(500).json({ error: "Failed to fetch documents" });
+    res.status(500).json({
+      error: "Failed to fetch documents",
+      details: error.message,
+    });
   }
 };
 
