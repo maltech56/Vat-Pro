@@ -30,7 +30,7 @@ exports.getSettings = async (req, res) => {
     const company = companyResult.rows[0];
 
     const result = await pool.query(`
-      SELECT
+      SELECT *
         company_id,
         default_vat_rate,
         filing_frequency,
