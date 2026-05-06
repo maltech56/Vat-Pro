@@ -160,7 +160,7 @@ exports.linkDocumentToTransaction = async (req, res) => {
     const documentCheck = await pool.query(
       `
       SELECT id, company_id
-      FROM company_documents
+      FROM company_documents d
       WHERE id = $1
       LIMIT 1
       `,
@@ -266,7 +266,7 @@ exports.getUnlinkedDocumentsByCompany = async (req, res) => {
     const result = await pool.query(
       `
       SELECT *
-      FROM company_documents
+      FROM company_documents d
       WHERE company_id = $1
         AND transaction_id IS NULL
       ORDER BY created_at DESC
@@ -325,7 +325,7 @@ exports.getDocumentsByTransaction = async (req, res) => {
     const result = await pool.query(
       `
       SELECT *
-      FROM company_documents
+      FROM company_documents d
       WHERE transaction_id = $1
       ORDER BY created_at DESC
       `,
@@ -425,7 +425,7 @@ exports.bulkLinkDocuments = async (req, res) => {
     const documentsCheck = await pool.query(
       `
       SELECT id, company_id
-      FROM company_documents
+      FROM company_documents d
       WHERE id = ANY($1::int[])
       `,
       [cleanedDocumentIds]
@@ -480,7 +480,7 @@ exports.getUnlinkedDocumentsSummary = async (req, res) => {
         COUNT(*)::int AS total_documents,
         COUNT(*) FILTER (WHERE transaction_id IS NULL)::int AS unlinked_count,
         COUNT(*) FILTER (WHERE transaction_id IS NOT NULL)::int AS linked_count
-      FROM company_documents
+      FROM company_documents d
       WHERE company_id = $1
       `,
       [companyId]
