@@ -23,24 +23,24 @@ export default function DashboardScreen({ token }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  if (!companyReady) return;
+    if (!companyReady) return;
 
-  setOverview(null);
-  setMonthlyVAT([]);
-  setClassification(null);
-  setTransactions([]);
+    setOverview(null);
+    setMonthlyVAT([]);
+    setClassification(null);
+    setTransactions([]);
 
-  if (!selectedCompany?.id) {
-    setLoading(false);
-    return;
-  }
+    if (!selectedCompany?.id) {
+      setLoading(false);
+      return;
+    }
 
-  loadDashboard(selectedCompany.id);
-}, [companyReady, selectedCompany?.id]);
+    loadDashboard(selectedCompany.id);
+  }, [companyReady, selectedCompany?.id]);
 
   const { selectedCompany, companyReady } = useCompany();
 
- const loadDashboard = async (companyId) => {
+  const loadDashboard = async (companyId) => {
     try {
       const [overviewData, monthlyData, classData, txData] = await Promise.all([
         fetchOverview(companyId, token),
@@ -79,8 +79,12 @@ export default function DashboardScreen({ token }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F8FA",
-    padding: 16,
+    backgroundColor: "#F5F7FB",
+  },
+
+  content: {
+    padding: 24,
+    paddingBottom: 80,
   },
   center: {
     flex: 1,
