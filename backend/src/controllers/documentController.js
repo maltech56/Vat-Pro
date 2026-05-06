@@ -25,7 +25,7 @@ exports.getCompanyDocuments = async (req, res) => {
         t.amount,
         t.vat_amount,
         t.description
-      FROM company_documents d
+      FROM company_documents 
       LEFT JOIN transactions t
         ON d.transaction_id = t.id
       WHERE d.company_id = $1
