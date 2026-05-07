@@ -22,6 +22,7 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
+  "http://localhost:8081",
   "http://localhost:8088",
   "http://localhost:8089",
   "http://localhost:8090",
