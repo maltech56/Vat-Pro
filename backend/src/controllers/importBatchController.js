@@ -145,10 +145,10 @@ exports.createImportBatch = async (req, res) => {
         template_id,
         file_name,
         total_rows,
-        success_rows,
-        failed_rows,
+        valid_rows,
+        error_rows,
         status,
-        created_by,
+        uploaded_by,
         created_at
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
@@ -176,28 +176,22 @@ exports.createImportBatch = async (req, res) => {
 
       await client.query(
         `
-        INSERT INTO import_batch_items (
+        INSERT INTO import_rows (
           batch_id,
-          row_index,
-          description,
-          amount,
-          transaction_date,
-          type,
-          classification,
+          row_number,
+          raw_data,
+          parsed_data,
           status,
           error_message,
           created_at
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+        VALUES ($1,$2,$3,$4,$5,$6,NOW())
         `,
         [
           batchId,
-          i,
-          row.description || null,
-          row.amount || null,
-          row.transactionDate || null,
-          row.type || null,
-          row.classification || null,
+          i + 1,
+          row,
+          row,
           row.status || "pending",
           row.error || null,
         ]
