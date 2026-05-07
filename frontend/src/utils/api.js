@@ -7,12 +7,13 @@ export const handleApiAuthError = async (response) => {
     let message = "Session expired. Please log in again.";
 
     try {
-      const data = response;
-      if (data?.error) {
-        message = data.error;
+      const data = await response.clone().json();
+
+      if (data?.error || data?.message) {
+        message = data.error || data.message;
       }
     } catch (error) {
-      // ignore parse error
+      // Ignore parse error and use default message
     }
 
     handleSessionExpired(message);
@@ -23,12 +24,13 @@ export const handleApiAuthError = async (response) => {
     let message = "Access denied.";
 
     try {
-      const data = response;
-      if (data?.error) {
-        message = data.error;
+      const data = await response.clone().json();
+
+      if (data?.error || data?.message) {
+        message = data.error || data.message;
       }
     } catch (error) {
-      // ignore parse error
+      // Ignore parse error and use default message
     }
 
     alert(message);
