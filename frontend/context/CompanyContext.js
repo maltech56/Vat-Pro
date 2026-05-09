@@ -33,57 +33,61 @@ export const CompanyProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-  const fetchCompanies = async () => {
-    try {
-      const token = getToken();
-      if (!token) {
+    const fetchCompanies = async () => {
+      try {
+        const token = getToken();
+        if (!token) {
+          setCompanies([]);
+          setSelectedCompanyState(null);
+          return;
+        }
+
+        await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL ||
+          "https://vat-pro-backend-web.onrender.com/api"
+          }/companies/user`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          setCompanies([]);
+          return;
+        }
+
+        setCompanies(data);
+
+        // ✅ Validate selectedCompany
+        if (data.length === 0) {
+          setSelectedCompanyState(null);
+          return;
+        }
+
+        if (!selectedCompany?.id) {
+          saveSelectedCompany(data[0]);
+          return;
+        }
+
+        const exists = data.find(c => c.id === selectedCompany.id);
+
+        if (!exists) {
+          saveSelectedCompany(data[0]);
+        }
+
+      } catch (error) {
+        console.error("Error fetching companies:", error);
         setCompanies([]);
-        setSelectedCompanyState(null);
-        return;
       }
+    };
 
-      const res = await fetch("https://vat-pro-backend.onrender.com/api/companies/user", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (!Array.isArray(data)) {
-        setCompanies([]);
-        return;
-      }
-
-      setCompanies(data);
-
-      // ✅ Validate selectedCompany
-      if (data.length === 0) {
-        setSelectedCompanyState(null);
-        return;
-      }
-
-      if (!selectedCompany?.id) {
-        saveSelectedCompany(data[0]);
-        return;
-      }
-
-      const exists = data.find(c => c.id === selectedCompany.id);
-
-      if (!exists) {
-        saveSelectedCompany(data[0]);
-      }
-
-    } catch (error) {
-      console.error("Error fetching companies:", error);
-      setCompanies([]);
+    if (companyReady) {
+      fetchCompanies();
     }
-  };
-
-  if (companyReady) {
-    fetchCompanies();
-  }
-}, [companyReady, selectedCompany?.id]);
+  }, [companyReady, selectedCompany?.id]);
 
   const saveSelectedCompany = (company) => {
     setSelectedCompanyState(company);

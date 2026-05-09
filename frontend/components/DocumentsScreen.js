@@ -21,7 +21,10 @@ const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
   "https://vat-pro-backend-web.onrender.com/api";
   
-const FILE_BASE = "https://vat-pro-backend.onrender.com/api";
+const FILE_BASE =
+  (process.env.EXPO_PUBLIC_API_URL ||
+    "https://vat-pro-backend-web.onrender.com/api")
+    .replace("/api", "");
 
 const CATEGORY_OPTIONS = [
   "All",
