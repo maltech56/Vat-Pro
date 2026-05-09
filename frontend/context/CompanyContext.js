@@ -52,7 +52,7 @@ export const CompanyProvider = ({ children }) => {
             },
           });
 
-        const data = await res.json();
+        const data = await response.json();
 
         if (!Array.isArray(data)) {
           setCompanies([]);
