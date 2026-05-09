@@ -1479,7 +1479,7 @@ export default function ImportsScreen() {
           </Text>
 
           <View style={styles.mappingCard}>
-            {!!matchedTemplate && (
+            {matchedTemplate !== null && matchedTemplate !== undefined && typeof matchedTemplate === "object" && (
               <View style={styles.templateMatchedBox}>
                 <View style={styles.templateMatchedTopRow}>
                   <Text style={styles.templateMatchedTitle}>
@@ -1959,7 +1959,7 @@ export default function ImportsScreen() {
 
                 <View style={styles.rowFooter}>
                   <Text style={styles.rowFooterText}>
-                    {row.confidence !== null && row.confidence !== undefined && (
+                    {confidence !== null && confidence !== undefined && (
                       <Text style={styles.ocrConfidenceText}>
                         OCR Confidence: {row.confidence}%
                       </Text>

@@ -791,7 +791,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
 
           <Text style={styles.pageTitle}>YOUR DOCUMENTS</Text>
 
-          {auditReadiness && (
+          {auditReadiness !== null && auditReadiness !== undefined && typeof auditReadiness === "object" && (
             <View style={styles.auditCard}>
               <View style={styles.auditHeaderRow}>
                 <Text style={styles.auditTitle}>Audit Readiness</Text>

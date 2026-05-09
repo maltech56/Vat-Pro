@@ -121,7 +121,7 @@ export default function Sidebar({
                 </Text>
               </View>
 
-              {item.badge && (
+              {item.badge !== null && item.badge !== undefined && item.badge !== "" && (
                 <View
                   style={[
                     styles.badge,

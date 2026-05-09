@@ -606,7 +606,7 @@ export default function Dashboard() {
               <View style={styles.heroCard}>
                 <View style={styles.heroRow}>
                   <View style={styles.heroLeft}>
-                    {companySettings?.logoUrl && (
+                    {!!companySettings?.logoUrl && (
                       <Image
                         source={{ uri: companySettings.logoUrl }}
                         style={{ width: 60, height: 60, marginBottom: 10 }}
@@ -653,7 +653,7 @@ export default function Dashboard() {
                   </View>
                 </View>
 
-                {vatAlert && (
+                {vatAlert !== null && vatAlert !== undefined && typeof vatAlert === "object" && (
                   <View
                     style={[
                       styles.vatAlertCard,
@@ -909,7 +909,7 @@ export default function Dashboard() {
                 </View>
               </TouchableOpacity>
 
-              {documentAuditAlert && (
+              {documentAuditAlert !== null && documentAuditAlert !== undefined && typeof documentAuditAlert === "object" && (
                 <View
                   style={[
                     styles.auditAlertCard,
