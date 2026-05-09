@@ -12,7 +12,9 @@ import {
 import { getToken } from "../src/utils/session";
 import { useCompany } from "../context/CompanyContext";
 
-const API_BASE = "https://vat-pro-backend.onrender.com/api";
+const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL ||
+  "https://vat-pro-backend-web.onrender.com/api";
 
 export default function AuditDashboardScreen() {
   const { selectedCompany, companyReady } = useCompany();

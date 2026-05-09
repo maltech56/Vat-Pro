@@ -1,6 +1,8 @@
 import { getToken } from "./session";
 
-const API_BASE = "https://vat-pro-backend.onrender.com/api";
+const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL ||
+  "https://vat-pro-backend-web.onrender.com/api";
 
 export const seedDemoDataIfNeeded = async () => {
   const alreadySeeded = localStorage.getItem("demoSeeded");

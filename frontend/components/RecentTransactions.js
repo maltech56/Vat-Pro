@@ -16,7 +16,9 @@ import {
   formatClassificationLabel,
 } from "../src/utils/formatters";
 
-const API_BASE = "https://vat-pro-backend.onrender.com/api";
+const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL ||
+  "https://vat-pro-backend-web.onrender.com/api";
 
 export default function RecentTransactions({
   refreshKey,
