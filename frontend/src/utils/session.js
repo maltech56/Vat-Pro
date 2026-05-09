@@ -1,8 +1,16 @@
-export const getToken = () => localStorage.getItem("token");
+const hasLocalStorage = () =>
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+export const getToken = () => {
+  if (!hasLocalStorage()) return null;
+  return window.localStorage.getItem("token");
+};
 
 export const getUser = () => {
   try {
-    const user = localStorage.getItem("user");
+    if (!hasLocalStorage()) return null;
+
+    const user = window.localStorage.getItem("user");
 
     if (!user || user === "undefined" || user === "null") {
       return null;
@@ -11,24 +19,38 @@ export const getUser = () => {
     return JSON.parse(user);
   } catch (error) {
     console.error("Error parsing user from session:", error);
-    localStorage.removeItem("user");
+
+    if (hasLocalStorage()) {
+      window.localStorage.removeItem("user");
+    }
+
     return null;
   }
 };
 
 export const getSelectedCompany = () => {
-  const raw = localStorage.getItem("selectedCompany");
-  return raw ? JSON.parse(raw) : null;
+  try {
+    if (!hasLocalStorage()) return null;
+
+    const raw = window.localStorage.getItem("selectedCompany");
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.error("Error parsing selected company:", error);
+    return null;
+  }
 };
 
 export const setSelectedCompany = (company) => {
-  localStorage.setItem("selectedCompany", JSON.stringify(company));
+  if (!hasLocalStorage()) return;
+  window.localStorage.setItem("selectedCompany", JSON.stringify(company));
 };
 
 export const clearSession = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  localStorage.removeItem("selectedCompany");
+  if (!hasLocalStorage()) return;
+
+  window.localStorage.removeItem("token");
+  window.localStorage.removeItem("user");
+  window.localStorage.removeItem("selectedCompany");
 };
 
 export const forceLogout = (
@@ -36,12 +58,11 @@ export const forceLogout = (
 ) => {
   clearSession();
 
-  alert(message);
-  window.location.href = "/";
+  if (typeof window !== "undefined") {
+    alert(message);
+    window.location.href = "/";
+  }
 };
-
-// Company-scoped cache helpers
-// Prevents data from one company being reused for another company
 
 export const getCompanyStorageKey = (companyId, key) => {
   if (!companyId || !key) return null;
@@ -49,19 +70,22 @@ export const getCompanyStorageKey = (companyId, key) => {
 };
 
 export const setCompanyCache = (companyId, key, value) => {
+  if (!hasLocalStorage()) return;
+
   const storageKey = getCompanyStorageKey(companyId, key);
   if (!storageKey) return;
 
-  localStorage.setItem(storageKey, JSON.stringify(value));
+  window.localStorage.setItem(storageKey, JSON.stringify(value));
 };
 
 export const getCompanyCache = (companyId, key) => {
-  const storageKey = getCompanyStorageKey(companyId, key);
-  if (!storageKey) return null;
-
-  const value = localStorage.getItem(storageKey);
-
   try {
+    if (!hasLocalStorage()) return null;
+
+    const storageKey = getCompanyStorageKey(companyId, key);
+    if (!storageKey) return null;
+
+    const value = window.localStorage.getItem(storageKey);
     return value ? JSON.parse(value) : null;
   } catch (error) {
     console.error("Failed to parse company cache:", error);
@@ -70,11 +94,11 @@ export const getCompanyCache = (companyId, key) => {
 };
 
 export const clearCompanyCache = (companyId) => {
-  if (!companyId) return;
+  if (!hasLocalStorage() || !companyId) return;
 
-  Object.keys(localStorage).forEach((key) => {
+  Object.keys(window.localStorage).forEach((key) => {
     if (key.startsWith(`company_${companyId}_`)) {
-      localStorage.removeItem(key);
+      window.localStorage.removeItem(key);
     }
   });
 };
