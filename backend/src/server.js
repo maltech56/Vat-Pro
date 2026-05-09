@@ -64,6 +64,11 @@ app.get("/", (req, res) => {
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+app.use((req, res, next) => {
+  console.log("REQUEST:", req.method, req.originalUrl);
+  next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/companies", companyRoutes);
 app.use("/api/dashboard", dashboardRoutes);
