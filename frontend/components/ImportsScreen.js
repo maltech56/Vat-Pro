@@ -163,41 +163,22 @@ export default function ImportsScreen() {
       const token = getAuthToken();
       if (!token || !selectedCompany?.id) return;
 
-      const sourceType = encodeURIComponent(selectedSource);
+      const sourceType = encodeURIComponent(String(selectedSource || "CSV").toUpperCase());
 
-      const candidateUrls = [
-        `${API_BASE}/import-templates?companyId=${selectedCompany.id}&sourceType=${sourceType}`,
-        `${API_BASE}/import-templates/company/${selectedCompany.id}?sourceType=${sourceType}`,
-      ];
+const response = await fetch(
+  `${API_BASE}/import-templates?companyId=${selectedCompany.id}&sourceType=${sourceType}`,
+  {
+    headers: getAuthHeaders(),
+  }
+);
 
-      let resolved = null;
-      let lastError = null;
+const data = await response.json().catch(() => []);
 
-      for (const url of candidateUrls) {
-        try {
-          const response = await fetch(url, {
-            headers: getAuthHeaders(),
-          });
+if (!response.ok) {
+  throw new Error(data?.error || "Failed to load templates");
+}
 
-          const data = await response.json().catch(() => []);
-
-          if (!response.ok) {
-            lastError = new Error(data?.error || "Failed to load templates");
-            continue;
-          }
-
-          resolved = Array.isArray(data) ? data : [];
-          break;
-        } catch (error) {
-          lastError = error;
-        }
-      }
-
-      if (!resolved) {
-        throw lastError || new Error("Failed to load templates");
-      }
-
-      setTemplates(resolved);
+setTemplates(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("fetchTemplates error:", error);
       setTemplates([]);

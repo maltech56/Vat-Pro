@@ -22,24 +22,29 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
-  "http://localhost:8081",
-  "http://localhost:8082",
-  "http://localhost:8088",
-  "http://localhost:8089",
-  "http://localhost:8090",
-  "http://localhost:3000",
-  "https://vat-pro-backend.onrender.com",
   process.env.CORS_ORIGIN,
+  "https://vat-pro-frontend.onrender.com",
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow tools like Postman, curl, Render health checks, and same-origin requests
+      // Allow tools like Postman, curl, mobile apps, and Render checks
       if (!origin) {
         return callback(null, true);
       }
 
+      // Development only: allow any localhost / 127.0.0.1 port
+      if (process.env.NODE_ENV !== "production") {
+        if (
+          origin.startsWith("http://localhost:") ||
+          origin.startsWith("http://127.0.0.1:")
+        ) {
+          return callback(null, true);
+        }
+      }
+
+      // Production/staging: only allow approved frontend origins
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
