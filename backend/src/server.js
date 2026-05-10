@@ -23,7 +23,9 @@ const app = express();
 
 const allowedOrigins = [
   process.env.CORS_ORIGIN,
-  "https://vat-pro-frontend.onrender.com",
+  "https://vatpro.maltechdigital.com",
+  "https://www.maltechdigital.com",
+  "https://maltechdigital.com",
 ].filter(Boolean);
 
 app.use(

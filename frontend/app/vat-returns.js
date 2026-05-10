@@ -13,7 +13,7 @@ import { getToken, getSelectedCompany } from "../src/utils/session";
 
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://vat-pro-backend-web.onrender.com/api";
+  "https://api.maltechdigital.com/api";
 
 export default function VatReturns() {
   const [company, setCompany] = useState(null);

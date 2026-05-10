@@ -19,7 +19,7 @@ import {
 } from "../src/utils/importParsers";
 
 const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL || "https://vat-pro-backend-web.onrender.com/api";
+  process.env.EXPO_PUBLIC_API_URL || "https://api.maltechdigital.com/api";
 
 const fetchWithTimeout = async (url, options = {}, timeout = 15000) => {
   const controller = new AbortController();

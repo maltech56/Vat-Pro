@@ -44,7 +44,7 @@ export const CompanyProvider = ({ children }) => {
 
         await fetch(
           `${process.env.EXPO_PUBLIC_API_URL ||
-          "https://vat-pro-backend-web.onrender.com/api"
+          "https://api.maltechdigital.com/api"
           }/companies/user`,
           {
             headers: {
