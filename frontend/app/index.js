@@ -14,8 +14,8 @@ const API_BASE =
 
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("dwight@test.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const login = async () => {
     try {
@@ -35,11 +35,11 @@ export default function Login() {
       if (data.token) {
         localStorage.setItem("token", data.token);
 
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      } else {
-        localStorage.removeItem("user");
-      }
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        } else {
+          localStorage.removeItem("user");
+        }
         global.token = data.token;
         global.user = data.user;
         router.push("/dashboard");
@@ -53,55 +53,55 @@ export default function Login() {
   };
 
   return (
-  <View style={styles.page}>
-    <View style={styles.leftPanel}>
-      <Text style={styles.brand}>MALTECH</Text>
-      <Text style={styles.product}>VAT PRO</Text>
+    <View style={styles.page}>
+      <View style={styles.leftPanel}>
+        <Text style={styles.brand}>MALTECH</Text>
+        <Text style={styles.product}>VAT PRO</Text>
 
-      <Text style={styles.headline}>
-        Audit-ready VAT compliance for modern businesses.
-      </Text>
-
-      <Text style={styles.subtext}>
-        Track VAT, link supporting documents, and generate filing packs with confidence.
-      </Text>
-    </View>
-
-    <View style={styles.rightPanel}>
-      <View style={styles.loginCard}>
-        <Text style={styles.loginTitle}>Welcome back</Text>
-        <Text style={styles.loginSubtitle}>
-          Sign in to continue to VAT Pro
+        <Text style={styles.headline}>
+          Audit-ready VAT compliance for modern businesses.
         </Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email address"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <TouchableOpacity style={styles.loginButton} onPress={login}>
-          <Text style={styles.loginButtonText}>Sign In</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.footerText}>
-          VAT Pro by Maltech Digital
+        <Text style={styles.subtext}>
+          Track VAT, link supporting documents, and generate filing packs with confidence.
         </Text>
       </View>
+
+      <View style={styles.rightPanel}>
+        <View style={styles.loginCard}>
+          <Text style={styles.loginTitle}>Welcome back</Text>
+          <Text style={styles.loginSubtitle}>
+            Sign in to continue to VAT Pro
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email address"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <TouchableOpacity style={styles.loginButton} onPress={login}>
+            <Text style={styles.loginButtonText}>Sign In</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.footerText}>
+            VAT Pro by Maltech Digital
+          </Text>
+        </View>
+      </View>
     </View>
-  </View>
-);
+  );
 }
 
 const styles = StyleSheet.create({

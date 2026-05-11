@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const dotenv = require("dotenv");
 const path = require("path");
 
@@ -20,6 +21,7 @@ const auditRoutes = require("./routes/auditRoutes");
 dotenv.config();
 
 const app = express();
+app.use(helmet());
 
 const allowedOrigins = [
   process.env.CORS_ORIGIN,
@@ -40,7 +42,7 @@ app.use(
       // Development only: allow any localhost / 127.0.0.1 port
       if (process.env.NODE_ENV !== "production") {
         if (
-          origin.startsWith("http://localhost:") ||
+          origin.includes("localhost") ||
           origin.startsWith("http://127.0.0.1:")
         ) {
           return callback(null, true);
