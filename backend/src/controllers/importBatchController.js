@@ -110,7 +110,6 @@ exports.getImportBatchById = async (req, res) => {
 };
 
 exports.createImportBatch = async (req, res) => {
-  console.log("REQ.BODY ROWS:", req.body.rows);
   const userId = req.user.id;
 
   const {

@@ -425,9 +425,6 @@ exports.uploadAndPreviewImport = async (req, res) => {
       ? parsed
       : Object.values(parsed || {}).find(Array.isArray) || [];
 
-    console.log("PARSED RESULT:", parsed);
-    console.log("RAW ROWS:", rawRows);
-
     if (!rawRows.length) {
       await client.query(
         `
@@ -634,8 +631,7 @@ exports.confirmImport = async (req, res) => {
 
     // 3. Insert transactions + mark rows imported
     for (const row of rowsResult.rows) {
-      console.log("PROCESSING ROW:", row.id, row.parsed_data);
-
+     
       const parsed =
         typeof row.parsed_data === "string"
           ? JSON.parse(row.parsed_data)

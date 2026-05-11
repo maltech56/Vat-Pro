@@ -4,8 +4,7 @@ const jwt = require("jsonwebtoken");
 
 // ================= LOGIN =================
 exports.login = async (req, res) => {
-  console.log("=== LOGIN HIT ===");
-
+ 
   try {
     const { email, password } = req.body;
 
@@ -23,10 +22,7 @@ exports.login = async (req, res) => {
     }
 
     const user = result.rows[0];
-
-    console.log("Entered password:", password);
-    console.log("DB hash:", user?.password);
-
+    
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
