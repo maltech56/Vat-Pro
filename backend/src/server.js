@@ -26,6 +26,7 @@ const allowedOrigins = [
   "https://vatpro.maltechdigital.com",
   "https://www.maltechdigital.com",
   "https://maltechdigital.com",
+  "https://vat-pro-frontend.onrender.com",
 ].filter(Boolean);
 
 app.use(
