@@ -25,6 +25,9 @@ app.use(helmet());
 
 const allowedOrigins = [
   process.env.CORS_ORIGIN,
+  "http://localhost:8084",
+  "http://localhost:8083",
+  "http://localhost:8081",
   "https://vatpro.maltechdigital.com",
   "https://www.maltechdigital.com",
   "https://maltechdigital.com",
@@ -71,8 +74,8 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== "production") {
-  console.log("REQUEST:", req.method, req.originalUrl);
-}
+    console.log("REQUEST:", req.method, req.originalUrl);
+  }
   next();
 });
 
