@@ -8,9 +8,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "/api";
+const API_BASE = "https://api.maltechenterprises.com/api";
 
 export default function Login() {
   const router = useRouter();
