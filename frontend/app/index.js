@@ -10,7 +10,7 @@ import { useRouter } from "expo-router";
 
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechdigital.com/api";
+  "/api";
 
 export default function Login() {
   const router = useRouter();

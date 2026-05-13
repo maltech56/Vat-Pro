@@ -44,7 +44,7 @@ export const CompanyProvider = ({ children }) => {
 
         await fetch(
           `${process.env.EXPO_PUBLIC_API_URL ||
-          "https://api.maltechdigital.com/api"
+          "https://api.maltechenterprises.com/api"
           }/companies/user`,
           {
             headers: {

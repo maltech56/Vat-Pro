@@ -14,7 +14,7 @@ import { useCompany } from "../context/CompanyContext";
 
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechdigital.com/api";
+  "https://api.maltechenterprises.com/api";
 
 const REPORT_TABS = [
   { key: "summary", label: "Summary" },

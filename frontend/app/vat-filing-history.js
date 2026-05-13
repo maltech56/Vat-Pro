@@ -18,7 +18,7 @@ import * as Sharing from "expo-sharing";
 
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechdigital.com/api";
+  "https://api.maltechenterprises.com/api";
 export default function VatFilingHistory() {
   const [filings, setFilings] = useState([]);
   const [loading, setLoading] = useState(true);

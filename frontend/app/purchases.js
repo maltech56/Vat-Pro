@@ -18,7 +18,7 @@ import { getToken, getSelectedCompany } from "../src/utils/session";
 
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechdigital.com/api";
+  "https://api.maltechenterprises.com/api";
 
 export default function Purchases() {
   const [selectedCompany, setSelectedCompany] = useState(null);
