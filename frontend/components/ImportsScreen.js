@@ -159,33 +159,55 @@ export default function ImportsScreen() {
     return headers;
   };
 
-  const fetchTemplates = async () => {
-    try {
-      const token = getAuthToken();
-      if (!token || !selectedCompany?.id) return;
+    const fetchTemplates = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token || !selectedCompany?.id) return;
 
-      const sourceType = encodeURIComponent(String(selectedSource || "CSV").toUpperCase());
+        const sourceType = encodeURIComponent(
+          String(selectedSource || "CSV").toUpperCase()
+        );
 
-const response = await fetch(
-  `${API_BASE}/import-templates?companyId=${selectedCompany.id}&sourceType=${sourceType}`,
-  {
-    headers: getAuthHeaders(),
-  }
-);
+        const url = `${API_BASE}/import-templates?companyId=${selectedCompany.id}&sourceType=${sourceType}`;
 
-const data = await response.json().catch(() => []);
+        console.log("IMPORT TEMPLATES REQUEST:", {
+          url,
+          companyId: selectedCompany.id,
+          sourceType,
+          tokenExists: !!token,
+        });
 
-if (!response.ok) {
-  throw new Error(data?.error || "Failed to load templates");
-}
+        const response = await fetch(url, {
+          headers: getAuthHeaders(),
+        });
 
-setTemplates(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("fetchTemplates error:", error);
-      setTemplates([]);
-    }
-  };
+        const responseText = await response.text();
 
+        console.log("IMPORT TEMPLATES STATUS:", response.status);
+        console.log("IMPORT TEMPLATES RAW RESPONSE:", responseText);
+
+        let data = [];
+        try {
+          data = responseText ? JSON.parse(responseText) : [];
+        } catch (parseError) {
+          console.error("IMPORT TEMPLATES JSON PARSE ERROR:", parseError);
+          data = [];
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data?.error ||
+            data?.message ||
+            `Failed to load templates. Status: ${response.status}`
+          );
+        }
+
+        setTemplates(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("fetchTemplates error:", error);
+        setTemplates([]);
+      }
+    };
   const fetchImportHistory = async () => {
     try {
       const token = getAuthToken();
