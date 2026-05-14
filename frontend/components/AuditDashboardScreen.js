@@ -40,23 +40,30 @@ export default function AuditDashboardScreen() {
         return;
       }
 
-      const response = await fetch(
-        `${API_BASE}/audit/company/${selectedCompany.id}/dashboard`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const auditUrl = `${API_BASE}/audit/company/${selectedCompany.id}/dashboard`;
+
+      console.log("AUDIT DASHBOARD REQUEST:", {
+        auditUrl,
+        companyId: selectedCompany?.id,
+        tokenExists: !!token,
+      });
+
+      const response = await fetch(auditUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("AUDIT DASHBOARD STATUS:", response.status);
 
       const data = response;
 
-      if (!res.ok) {
-        const errorText = await res.text();
+      if (!response.ok) {
+        const errorText = await response.text();
 
-        console.error("AUDIT DASHBOARD ERROR:", {
-          status: res.status,
-          statusText: res.statusText,
+        console.error("AUDIT DASHBOARD FAILED:", {
+          status: response.status,
+          statusText: response.statusText,
           response: errorText,
         });
 
