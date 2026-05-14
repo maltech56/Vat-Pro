@@ -257,7 +257,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         throw new Error("Documents API did not return JSON.");
       }
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch documents");
