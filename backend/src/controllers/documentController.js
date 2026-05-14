@@ -9,33 +9,33 @@ exports.getCompanyDocuments = async (req, res) => {
   try {
     let query = `
       SELECT
-        d.id,
-        d.company_id,
-        d.transaction_id,
-        d.file_name AS original_name,
-        d.file_name,
-        d.file_path,
-        d.file_size,
-        d.mime_type,
-        d.category,
-        d.status,
-        d.created_at,
-        t.transaction_date,
-        t.type,
-        t.amount,
-        t.vat_amount,
-        t.description
-      FROM company_documents d
-      LEFT JOIN transactions t
-        ON d.transaction_id = t.id
-      WHERE d.company_id = $1
+  d.id,
+  d.company_id,
+  d.transaction_id,
+  d.file_name AS original_name,
+  d.file_name,
+  d.file_url AS file_path,
+  NULL AS file_size,
+  NULL AS mime_type,
+  'General' AS category,
+  'Active' AS status,
+  d.created_at,
+  t.transaction_date,
+  t.type,
+  t.amount,
+  t.vat_amount,
+  t.description
+FROM company_documents d
+LEFT JOIN transactions t
+  ON d.transaction_id = t.id
+WHERE d.company_id = $1
     `;
 
     const values = [companyId];
     let index = 2;
 
     if (search && search.trim()) {
-      query += ` AND d.original_name ILIKE $${index}`;
+      query += ` AND d.file_name ILIKE $${index}`;
       values.push(`%${search.trim()}%`);
       index++;
     }
