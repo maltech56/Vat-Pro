@@ -57,7 +57,7 @@ exports.getAuditDashboard = async (req, res) => {
     SELECT COUNT(DISTINCT t.id) AS count
     FROM transactions t
     JOIN company_documents d
-    ON COALESCE(d.transaction_id, d.linked_transaction_id) = t.id
+    ON d.transaction_id = t.id
     WHERE t.company_id = $1
     `,
       [companyId]
