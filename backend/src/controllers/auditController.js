@@ -54,12 +54,12 @@ exports.getAuditDashboard = async (req, res) => {
     // 🔹 4. Transactions WITH documents
     const linkedTransactionsResult = await pool.query(
       `
-      SELECT COUNT(DISTINCT t.id) AS count
-      FROM transactions t
-      JOIN company_documents d
-      ON d.transaction_id = t.id
-      WHERE t.company_id = $1
-      `,
+    SELECT COUNT(DISTINCT t.id) AS count
+    FROM transactions t
+    JOIN company_documents d
+    ON COALESCE(d.transaction_id, d.linked_transaction_id) = t.id
+    WHERE t.company_id = $1
+    `,
       [companyId]
     );
 
