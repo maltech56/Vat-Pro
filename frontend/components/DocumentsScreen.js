@@ -20,7 +20,7 @@ import { getToken } from "../src/utils/session";
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
   "https://api.maltechenterprises.com/api";
-  
+
 const FILE_BASE =
   (process.env.EXPO_PUBLIC_API_URL ||
     "https://api.maltechenterprises.com/api")
@@ -258,6 +258,9 @@ export default function DocumentsScreen({ pageOptions = {} }) {
       }
 
       const data = await response.json();
+
+      console.log("DOCUMENTS STATUS:", response.status);
+      console.log("DOCUMENTS RESPONSE:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch documents");
