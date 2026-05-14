@@ -42,7 +42,7 @@ export const CompanyProvider = ({ children }) => {
           return;
         }
 
-        await fetch(
+        const response = await fetch(
           `${process.env.EXPO_PUBLIC_API_URL ||
           "https://api.maltechenterprises.com/api"
           }/companies/user`,
@@ -50,7 +50,19 @@ export const CompanyProvider = ({ children }) => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("FETCH COMPANIES ERROR:", {
+            status: response.status,
+            statusText: response.statusText,
+            response: errorText,
           });
+          setCompanies([]);
+          return;
+        }
 
         const data = await response.json();
 
