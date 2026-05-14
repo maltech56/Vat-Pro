@@ -29,7 +29,6 @@ exports.getAuditDashboard = async (req, res) => {
       FROM company_documents
       WHERE company_id = $1
         AND transaction_id IS NULL
-        AND transaction_id IS NULL
       `,
       [companyId]
     );
@@ -59,7 +58,6 @@ exports.getAuditDashboard = async (req, res) => {
       FROM transactions t
       JOIN company_documents d
       ON d.transaction_id = t.id
-      OR d.transaction_id = t.id
       WHERE t.company_id = $1
       `,
       [companyId]
@@ -91,7 +89,7 @@ exports.getAuditDashboard = async (req, res) => {
     // 🔹 8. Recent filings (last 5)
     const filingsResult = await pool.query(
       `
-      SELECT id, start_date, end_date, status
+      SELECT *
       FROM vat_filings
       WHERE company_id = $1
       ORDER BY created_at DESC
