@@ -50,6 +50,8 @@ exports.getCompanyDocuments = async (req, res) => {
 
     const result = await pool.query(query, values);
 
+    return res.json(result.rows);
+
   } catch (error) {
     console.error("getCompanyDocuments error:", error);
     res.status(500).json({
