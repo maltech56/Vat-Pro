@@ -51,8 +51,16 @@ export default function AuditDashboardScreen() {
 
       const data = response;
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to load audit dashboard");
+      if (!res.ok) {
+        const errorText = await res.text();
+
+        console.error("AUDIT DASHBOARD ERROR:", {
+          status: res.status,
+          statusText: res.statusText,
+          response: errorText,
+        });
+
+        throw new Error("Failed to load audit dashboard");
       }
 
       setAuditData(data);
@@ -199,13 +207,13 @@ export default function AuditDashboardScreen() {
           </Text>
         ) : (
           <Text style={styles.goodText}>
-           {"• "} No unlinked uploaded documents detected.
+            {"• "} No unlinked uploaded documents detected.
           </Text>
         )}
 
         {auditData.auditScore < 70 ? (
           <Text style={styles.dangerText}>
-           {"• "} Filing submission may be blocked until audit readiness improves.
+            {"• "} Filing submission may be blocked until audit readiness improves.
           </Text>
         ) : null}
       </View>
