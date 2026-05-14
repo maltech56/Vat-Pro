@@ -12,7 +12,7 @@ exports.getCompanyDocuments = async (req, res) => {
         d.id,
         d.company_id,
         d.transaction_id,
-        d.original_name,
+        d.file_name AS original_name,
         d.file_name,
         d.file_path,
         d.file_size,
