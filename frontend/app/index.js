@@ -16,39 +16,47 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const login = async () => {
-    try {
-      console.log("Trying login...");
+  try {
+    console.log("Trying login...");
 
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        password,
+      }),
+    });
 
-      console.log("HTTP status:", res.status);
+    console.log("HTTP status:", res.status);
 
-      const data = await res.json();
-      console.log("LOGIN RESPONSE:", data);
+    const data = await res.json();
+    console.log("LOGIN RESPONSE:", data);
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        } else {
-          localStorage.removeItem("user");
-        }
-        global.token = data.token;
-        global.user = data.user;
-        router.push("/dashboard");
-      } else {
-        alert(data.error || data.message || "Login failed");
-      }
-    } catch (err) {
-      console.error("LOGIN FETCH ERROR:", err);
-      alert("Failed to fetch. Check backend/CORS.");
+    if (!res.ok) {
+      alert(data.error || data.message || "Invalid email or password");
+      return;
     }
-  };
+
+    if (!data.token) {
+      alert("Login succeeded but no token was returned.");
+      return;
+    }
+
+    localStorage.setItem("token", data.token);
+
+    if (data.user) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+    } else {
+      localStorage.removeItem("user");
+    }
+
+    router.replace("/dashboard");
+  } catch (err) {
+    console.error("LOGIN FETCH ERROR:", err);
+    alert("Login request failed. Check backend logs.");
+  }
+};
 
   return (
     <View style={styles.page}>
