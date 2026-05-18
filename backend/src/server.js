@@ -19,7 +19,6 @@ const auditRoutes = require("./routes/auditRoutes");
 const quickbooksRoutes = require("./routes/quickbooksRoutes");
 //const demoRoutes = require("./routes/demoRoutes");
 
-
 dotenv.config();
 
 const app = express();
@@ -94,6 +93,8 @@ app.use("/api/import-batches", importBatchRoutes);
 app.use("/api/imports", importRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/quickbooks", quickbooksRoutes);
+
+console.log("✅ QUICKBOOKS ROUTES MOUNTED");
 
 const PORT = process.env.PORT || 5000;
 

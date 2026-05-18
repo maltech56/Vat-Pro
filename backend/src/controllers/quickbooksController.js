@@ -3,6 +3,8 @@ const oauthClient = require("../services/quickbooksService");
 const OAuthClient = require("intuit-oauth");
 
 exports.connectQuickBooks = async (req, res) => {
+  console.log("🔥 CONNECT QUICKBOOKS HIT");
+
     try {
         const companyId = req.query.companyId;
 

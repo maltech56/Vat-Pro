@@ -9,7 +9,7 @@ const {
   disconnectQuickBooks,
 } = require("../controllers/quickbooksController");
 
-router.get("/connect", authMiddleware, connectQuickBooks);
+router.get("/connect", connectQuickBooks);
 router.get("/callback", quickBooksCallback); // NO auth middleware
 
 router.post(
