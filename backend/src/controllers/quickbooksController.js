@@ -2,10 +2,6 @@ const pool = require("../config/db");
 const oauthClient = require("../services/quickbooksService");
 const OAuthClient = require("intuit-oauth");
 
-const pool = require("../config/db");
-const oauthClient = require("../services/quickbooksService");
-const OAuthClient = require("intuit-oauth");
-
 exports.connectQuickBooks = async (req, res) => {
     try {
         const companyId = req.query.companyId;
@@ -26,6 +22,11 @@ exports.connectQuickBooks = async (req, res) => {
             state,
         });
 
+        console.log("Generated QuickBooks URL:", authUri);
+        console.log("CLIENT ID:", process.env.QUICKBOOKS_CLIENT_ID);
+        console.log("REDIRECT URI:", process.env.QUICKBOOKS_REDIRECT_URI);
+        console.log("AUTH URI:", authUri);
+
         return res.redirect(authUri);
     } catch (error) {
         console.error("QuickBooks connect error:", error);
@@ -35,32 +36,32 @@ exports.connectQuickBooks = async (req, res) => {
     }
 };
 exports.quickBooksCallback = async (req, res) => {
-  try {
-    if (!req.query.state) {
-      throw new Error("Missing OAuth state");
-    }
+    try {
+        if (!req.query.state) {
+            throw new Error("Missing OAuth state");
+        }
 
-    const authResponse = await oauthClient.createToken(req.url);
-    const tokenData = authResponse.getJson();
+        const authResponse = await oauthClient.createToken(req.url);
+        const tokenData = authResponse.getJson();
 
-    const realmId = req.query.realmId; // FIXED LOCATION
+        const realmId = req.query.realmId; // FIXED LOCATION
 
-    const accessToken = tokenData.access_token;
-    const refreshToken = tokenData.refresh_token;
-    const expiresIn = tokenData.expires_in;
+        const accessToken = tokenData.access_token;
+        const refreshToken = tokenData.refresh_token;
+        const expiresIn = tokenData.expires_in;
 
-    const decodedState = JSON.parse(
-      Buffer.from(req.query.state, "base64").toString("utf8")
-    );
+        const decodedState = JSON.parse(
+            Buffer.from(req.query.state, "base64").toString("utf8")
+        );
 
-    const companyId = decodedState.companyId;
+        const companyId = decodedState.companyId;
 
-    if (!companyId || !realmId) {
-      throw new Error("Missing companyId or realmId");
-    }
+        if (!companyId || !realmId) {
+            throw new Error("Missing companyId or realmId");
+        }
 
-    await pool.query(
-      `
+        await pool.query(
+            `
       INSERT INTO quickbooks_connections (
         company_id,
         realm_id,
@@ -79,19 +80,19 @@ exports.quickBooksCallback = async (req, res) => {
         token_expires_at = EXCLUDED.token_expires_at,
         updated_at = NOW()
       `,
-      [companyId, realmId, accessToken, refreshToken, expiresIn]
-    );
+            [companyId, realmId, accessToken, refreshToken, expiresIn]
+        );
 
-    return res.redirect(
-      "https://vat.maltechenterprises.com/settings?quickbooks=connected"
-    );
-  } catch (error) {
-    console.error("QuickBooks callback error:", error);
+        return res.redirect(
+            "https://vat.maltechenterprises.com/settings?quickbooks=connected"
+        );
+    } catch (error) {
+        console.error("QuickBooks callback error:", error);
 
-    return res.status(500).json({
-      error: "QuickBooks connection failed",
-    });
-  }
+        return res.status(500).json({
+            error: "QuickBooks connection failed",
+        });
+    }
 };
 
 exports.disconnectQuickBooks = async (req, res) => {
