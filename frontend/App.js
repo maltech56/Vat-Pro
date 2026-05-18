@@ -9,5 +9,5 @@ export default function App() {
     return <LoginScreen onLogin={setToken} />;
   }
 
-  return <dataashboardScreen token={token} />;
+  return <DashboardScreen token={token} />;
 }

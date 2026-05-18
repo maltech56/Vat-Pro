@@ -9,16 +9,8 @@ const {
   disconnectQuickBooks,
 } = require("../controllers/quickbooksController");
 
-router.get(
-  "/connect",
-  authMiddleware,
-  connectQuickBooks
-);
-
-router.get(
-  "/callback",
-  quickBooksCallback
-);
+router.get("/connect", authMiddleware, connectQuickBooks);
+router.get("/callback", quickBooksCallback); // NO auth middleware
 
 router.post(
   "/disconnect",

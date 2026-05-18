@@ -2,6 +2,11 @@ const pool = require("../config/db");
 const oauthClient = require("../services/quickbooksService");
 const OAuthClient = require("intuit-oauth");
 
+const pool = require("../config/db");
+const oauthClient = require("../services/quickbooksService");
+const OAuthClient = require("intuit-oauth");
+const axios = require("axios");
+
 exports.connectQuickBooks = async (req, res) => {
   try {
     const companyId = req.query.companyId;
@@ -140,8 +145,117 @@ exports.disconnectQuickBooks = async (req, res) => {
     );
 
     return res.status(500).json({
-      error:
-        "Failed to disconnect QuickBooks",
+      error: "Failed to disconnect QuickBooks",
+    });
+  }
+};
+
+
+
+exports.quickBooksCallback = async (req, res) => {
+  try {
+    const authResponse =
+      await oauthClient.createToken(req.url);
+
+    const tokenData =
+      authResponse.getJson();
+
+    const realmId = tokenData.realmId;
+
+    const accessToken =
+      tokenData.access_token;
+
+    const refreshToken =
+      tokenData.refresh_token;
+
+    const expiresIn =
+      tokenData.expires_in;
+
+    const decodedState = JSON.parse(
+      Buffer.from(req.query.state, "base64")
+        .toString("utf8")
+    );
+
+    const companyId =
+      decodedState.companyId;
+
+    // Store connection
+    await pool.query(
+      `
+      INSERT INTO quickbooks_connections (
+        company_id,
+        realm_id,
+        access_token,
+        refresh_token,
+        token_expires_at,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        NOW() + ($5 || ' seconds')::interval,
+        NOW(),
+        NOW()
+      )
+      ON CONFLICT (company_id)
+      DO UPDATE SET
+        realm_id = EXCLUDED.realm_id,
+        access_token = EXCLUDED.access_token,
+        refresh_token = EXCLUDED.refresh_token,
+        token_expires_at = EXCLUDED.token_expires_at,
+        updated_at = NOW()
+      `,
+      [
+        companyId,
+        realmId,
+        accessToken,
+        refreshToken,
+        expiresIn,
+      ]
+    );
+
+    return res.redirect(
+      "https://vat.maltechenterprises.com/settings?quickbooks=connected"
+    );
+  } catch (error) {
+    console.error(
+      "QuickBooks callback error:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "QuickBooks connection failed",
+    });
+  }
+};
+
+exports.disconnectQuickBooks = async (req, res) => {
+  try {
+    const { companyId } = req.body;
+
+    await pool.query(
+      `
+      DELETE FROM quickbooks_connections
+      WHERE company_id = $1
+      `,
+      [companyId]
+    );
+
+    return res.json({
+      message:
+        "QuickBooks disconnected successfully",
+    });
+  } catch (error) {
+    console.error(
+      "QuickBooks disconnect error:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "Failed to disconnect QuickBooks",
     });
   }
 };
