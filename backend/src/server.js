@@ -77,7 +77,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== "production") {
     console.log("REQUEST:", req.method, req.originalUrl);
-  }
+  } 
   next();
 });
 
@@ -99,4 +99,6 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  console.log("🔥 QUICKBOOKS ROUTES LOADED");
 });

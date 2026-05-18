@@ -583,9 +583,10 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
         <TouchableOpacity
           style={styles.saveButton}
           onPress={() => {
-            Linking.openURL(
-              `${API_BASE}/quickbooks/connect`
-            );
+            const connectQuickBooks = () => {
+              const url = `${API_BASE}/quickbooks/connect`;
+              Linking.openURL(url);
+            };
           }}
         >
           <Text style={styles.saveButtonText}>
