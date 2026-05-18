@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import CompanyBrandingSettings from "./CompanyBrandingSettings";
+import { Linking } from "react-native";
 import {
   View,
   Text,
@@ -117,7 +118,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
     fetchSettings();
 
   }, [selectedCompany?.id]);
-  
+
   const fetchSettings = async () => {
     try {
       const token = getToken();
@@ -570,6 +571,28 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       </View>
 
       <CompanyBrandingSettings selectedCompany={selectedCompany} />
+
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Integrations</Text>
+
+        <Text style={styles.label}>
+          Connect your QuickBooks account to import invoices,
+          expenses, and accounting records automatically.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={() => {
+            Linking.openURL(
+              `${API_BASE}/quickbooks/connect`
+            );
+          }}
+        >
+          <Text style={styles.saveButtonText}>
+            Connect QuickBooks
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>VAT Preferences</Text>

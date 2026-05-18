@@ -16,7 +16,9 @@ const importTemplateRoutes = require("./routes/importTemplateRoutes");
 const importBatchRoutes = require("./routes/importBatchRoutes");
 const importRoutes = require("./routes/importRoutes");
 const auditRoutes = require("./routes/auditRoutes");
+const quickbooksRoutes = require("./routes/quickbooksRoutes");
 //const demoRoutes = require("./routes/demoRoutes");
+
 
 dotenv.config();
 
@@ -91,6 +93,7 @@ app.use("/api/import-templates", importTemplateRoutes);
 app.use("/api/import-batches", importBatchRoutes);
 app.use("/api/imports", importRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/quickbooks", quickbooksRoutes);
 
 const PORT = process.env.PORT || 5000;
 

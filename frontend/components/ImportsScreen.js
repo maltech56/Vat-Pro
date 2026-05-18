@@ -159,55 +159,55 @@ export default function ImportsScreen() {
     return headers;
   };
 
-    const fetchTemplates = async () => {
+  const fetchTemplates = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token || !selectedCompany?.id) return;
+
+      const sourceType = encodeURIComponent(
+        String(selectedSource || "CSV").toUpperCase()
+      );
+
+      const url = `${API_BASE}/import-templates?companyId=${selectedCompany.id}&sourceType=${sourceType}`;
+
+      console.log("IMPORT TEMPLATES REQUEST:", {
+        url,
+        companyId: selectedCompany.id,
+        sourceType,
+        tokenExists: !!token,
+      });
+
+      const response = await fetch(url, {
+        headers: getAuthHeaders(),
+      });
+
+      const responseText = await response.text();
+
+      console.log("IMPORT TEMPLATES STATUS:", response.status);
+      console.log("IMPORT TEMPLATES RAW RESPONSE:", responseText);
+
+      let data = [];
       try {
-        const token = getAuthToken();
-        if (!token || !selectedCompany?.id) return;
-
-        const sourceType = encodeURIComponent(
-          String(selectedSource || "CSV").toUpperCase()
-        );
-
-        const url = `${API_BASE}/import-templates?companyId=${selectedCompany.id}&sourceType=${sourceType}`;
-
-        console.log("IMPORT TEMPLATES REQUEST:", {
-          url,
-          companyId: selectedCompany.id,
-          sourceType,
-          tokenExists: !!token,
-        });
-
-        const response = await fetch(url, {
-          headers: getAuthHeaders(),
-        });
-
-        const responseText = await response.text();
-
-        console.log("IMPORT TEMPLATES STATUS:", response.status);
-        console.log("IMPORT TEMPLATES RAW RESPONSE:", responseText);
-
-        let data = [];
-        try {
-          data = responseText ? JSON.parse(responseText) : [];
-        } catch (parseError) {
-          console.error("IMPORT TEMPLATES JSON PARSE ERROR:", parseError);
-          data = [];
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            data?.error ||
-            data?.message ||
-            `Failed to load templates. Status: ${response.status}`
-          );
-        }
-
-        setTemplates(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("fetchTemplates error:", error);
-        setTemplates([]);
+        data = responseText ? JSON.parse(responseText) : [];
+      } catch (parseError) {
+        console.error("IMPORT TEMPLATES JSON PARSE ERROR:", parseError);
+        data = [];
       }
-    };
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+          data?.message ||
+          `Failed to load templates. Status: ${response.status}`
+        );
+      }
+
+      setTemplates(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("fetchTemplates error:", error);
+      setTemplates([]);
+    }
+  };
   const fetchImportHistory = async () => {
     try {
       const token = getAuthToken();
@@ -1016,6 +1016,19 @@ export default function ImportsScreen() {
     );
   };
 
+  const connectQuickBooks = () => {
+    if (!selectedCompany?.id) {
+      Alert.alert(
+        "No Company Selected",
+        "Please select a company first."
+      );
+      return;
+    }
+
+    window.location.href =
+      `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`;
+  };
+
   const handleChooseFile = async () => {
     try {
       if (!selectedCompany?.id) {
@@ -1024,10 +1037,7 @@ export default function ImportsScreen() {
       }
 
       if (selectedSource === "QuickBooks") {
-        Alert.alert(
-          "QuickBooks",
-          "QuickBooks integration should be added next as an OAuth/API workflow. This screen is ready for file-based imports now."
-        );
+        connectQuickBooks();
         return;
       }
 
