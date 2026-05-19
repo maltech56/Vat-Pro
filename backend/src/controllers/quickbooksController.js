@@ -8,18 +8,17 @@ exports.connectQuickBooks = async (req, res) => {
     console.log("REQ USER:", req.user);
     console.log("REQ QUERY:", req.query);
 
-    console.log("QB ENV CHECK:", {
-        clientId: process.env.QUICKBOOKS_CLIENT_ID,
-        clientSecret: process.env.QUICKBOOKS_CLIENT_SECRET ? "EXISTS" : "MISSING",
-        redirectUri: process.env.QUICKBOOKS_REDIRECT_URI,
-        env: process.env.QUICKBOOKS_ENVIRONMENT
-    });
-
     try {
         const companyId = req.query.companyId;
 
         if (!companyId) {
+            console.log("MISSING COMPANY ID");
             return res.status(400).json({ error: "Company ID is required" });
+        }
+
+        if (!req.user || !req.user.id) {
+            console.log("MISSING AUTH USER");
+            return res.status(401).json({ error: "Unauthorized - missing user" });
         }
 
         const state = Buffer.from(
@@ -29,50 +28,27 @@ exports.connectQuickBooks = async (req, res) => {
             })
         ).toString("base64");
 
-        console.log(
-            "CLIENT ID:",
-            process.env.QUICKBOOKS_CLIENT_ID
-        );
-
-        console.log(
-            "REDIRECT URI:",
-            process.env.QUICKBOOKS_REDIRECT_URI
-        );
-
-        console.log(
-            "ENVIRONMENT:",
-            process.env.QUICKBOOKS_ENVIRONMENT
-        );
-
-        console.log("COMPANY ID:", companyId);
         console.log("GENERATING QUICKBOOKS AUTH URL...");
-
-        console.log("AUTH URL GENERATED:");
-        console.log(authUri);
 
         const authUri = oauthClient.authorizeUri({
             scope: [OAuthClient.scopes.Accounting],
             state,
         });
 
-        console.log("Generated QuickBooks URL:", authUri);
-        console.log("CLIENT ID:", process.env.QUICKBOOKS_CLIENT_ID);
-        console.log("REDIRECT URI:", process.env.QUICKBOOKS_REDIRECT_URI);
-        console.log("AUTH URI:", authUri);
+        console.log("AUTH URI GENERATED:", authUri);
 
         return res.redirect(authUri);
-    } catch (error) {
-        console.error(
-            "QuickBooks connect error:",
-            error.message
-        );
 
-        console.error(error);
+    } catch (error) {
+        console.error("FULL QUICKBOOKS ERROR:", error);
+        console.error("STACK:", error.stack);
+
         return res.status(500).json({
             error: "Failed to initiate QuickBooks connection",
         });
     }
 };
+
 exports.quickBooksCallback = async (req, res) => {
     try {
         if (!req.query.state) {
