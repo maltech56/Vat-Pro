@@ -3,7 +3,7 @@ const oauthClient = require("../services/quickbooksService");
 const OAuthClient = require("intuit-oauth");
 
 exports.connectQuickBooks = async (req, res) => {
-  console.log("🔥 CONNECT QUICKBOOKS HIT");
+    console.log("🔥 CONNECT QUICKBOOKS HIT");
 
     try {
         const companyId = req.query.companyId;
@@ -19,6 +19,21 @@ exports.connectQuickBooks = async (req, res) => {
             })
         ).toString("base64");
 
+        console.log(
+            "CLIENT ID:",
+            process.env.QUICKBOOKS_CLIENT_ID
+        );
+
+        console.log(
+            "REDIRECT URI:",
+            process.env.QUICKBOOKS_REDIRECT_URI
+        );
+
+        console.log(
+            "ENVIRONMENT:",
+            process.env.QUICKBOOKS_ENVIRONMENT
+        );
+
         const authUri = oauthClient.authorizeUri({
             scope: [OAuthClient.scopes.Accounting],
             state,
@@ -31,7 +46,12 @@ exports.connectQuickBooks = async (req, res) => {
 
         return res.redirect(authUri);
     } catch (error) {
-        console.error("QuickBooks connect error:", error);
+        console.error(
+            "QuickBooks connect error:",
+            error.message
+        );
+
+        console.error(error);
         return res.status(500).json({
             error: "Failed to initiate QuickBooks connection",
         });
