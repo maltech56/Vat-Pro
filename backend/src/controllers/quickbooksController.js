@@ -41,6 +41,12 @@ exports.connectQuickBooks = async (req, res) => {
             process.env.QUICKBOOKS_ENVIRONMENT
         );
 
+        console.log("COMPANY ID:", companyId);
+        console.log("GENERATING QUICKBOOKS AUTH URL...");
+
+        console.log("AUTH URL GENERATED:");
+        console.log(authUri);
+
         const authUri = oauthClient.authorizeUri({
             scope: [OAuthClient.scopes.Accounting],
             state,
