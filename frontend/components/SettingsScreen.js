@@ -429,6 +429,17 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
     }
   };
 
+  const handleConnectQuickBooks = () => {
+    if (!selectedCompany?.id) {
+      Alert.alert("Error", "Please select a company first.");
+      return;
+    }
+
+    const url = `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`;
+
+    Linking.openURL(url);
+  };
+
   if (loading) {
     return (
       <View style={styles.loaderWrap}>
@@ -582,12 +593,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
 
         <TouchableOpacity
           style={styles.saveButton}
-          onPress={() => {
-            const connectQuickBooks = () => {
-              const url = `${API_BASE}/quickbooks/connect`;
-              Linking.openURL(url);
-            };
-          }}
+          onPress={handleConnectQuickBooks}
         >
           <Text style={styles.saveButtonText}>
             Connect QuickBooks

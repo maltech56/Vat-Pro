@@ -5,6 +5,13 @@ const OAuthClient = require("intuit-oauth");
 exports.connectQuickBooks = async (req, res) => {
     console.log("🔥 CONNECT QUICKBOOKS HIT");
 
+    console.log("QB ENV CHECK:", {
+        clientId: process.env.QUICKBOOKS_CLIENT_ID,
+        clientSecret: process.env.QUICKBOOKS_CLIENT_SECRET ? "EXISTS" : "MISSING",
+        redirectUri: process.env.QUICKBOOKS_REDIRECT_URI,
+        env: process.env.QUICKBOOKS_ENVIRONMENT
+    });
+
     try {
         const companyId = req.query.companyId;
 
