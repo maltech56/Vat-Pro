@@ -17,11 +17,14 @@ const importBatchRoutes = require("./routes/importBatchRoutes");
 const importRoutes = require("./routes/importRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const quickbooksRoutes = require("./routes/quickbooksRoutes");
-//const demoRoutes = require("./routes/demoRoutes");
+const demoRoutes = require("./routes/demoRoutes");
 
 dotenv.config();
 
 const app = express();
+
+app.use(cors());
+
 app.use(helmet());
 
 const allowedOrigins = [
@@ -65,7 +68,7 @@ app.use(
   })
 );
 app.use(express.json());
-//app.use("/api/demo", demoRoutes);
+app.use("/api/demo", demoRoutes);
 
 app.get("/", (req, res) => {
   res.send("VAT Pro Backend Running 🚀");
