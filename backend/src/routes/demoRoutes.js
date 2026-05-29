@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { Resend } = require("resend");
 
+const pool = require("../config/db");
+
 const authMiddleware = require("../middleware/authMiddleware");
 const demoController = require("../controllers/demoController");
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -39,6 +41,29 @@ router.post("/demo-request", async (req, res) => {
             phone,
             message,
         });
+
+        await pool.query(
+            `
+    INSERT INTO demo_requests
+    (
+      full_name,
+      company_name,
+      email,
+      phone,
+      message
+    )
+    VALUES ($1, $2, $3, $4, $5)
+  `,
+            [
+                fullName,
+                companyName,
+                email,
+                phone,
+                message,
+            ]
+        );
+
+        console.log("✅ Demo request saved to PostgreSQL");
 
         // EMAIL TO ADMIN
 

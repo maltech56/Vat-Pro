@@ -18,6 +18,7 @@ const importRoutes = require("./routes/importRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const quickbooksRoutes = require("./routes/quickbooksRoutes");
 const demoRoutes = require("./routes/demoRoutes");
+const leadRoutes = require("./routes/leadRoutes");
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ app.use(
 );
 app.use(express.json());
 app.use("/api/demo", demoRoutes);
+app.use("/api/leads", leadRoutes);
 
 app.get("/", (req, res) => {
   res.send("VAT Pro Backend Running 🚀");
