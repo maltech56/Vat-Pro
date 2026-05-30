@@ -102,32 +102,32 @@ export default function LeadsPage() {
 
     const filteredLeads = leads.filter((lead) => {
 
-    const searchText = search.toLowerCase();
+        const searchText = search.toLowerCase();
 
-    return (
-        (lead.full_name || "")
-            .toLowerCase()
-            .includes(searchText) ||
+        return (
+            (lead.full_name || "")
+                .toLowerCase()
+                .includes(searchText) ||
 
-        (lead.company_name || "")
-            .toLowerCase()
-            .includes(searchText) ||
+            (lead.company_name || "")
+                .toLowerCase()
+                .includes(searchText) ||
 
-        (lead.email || "")
-            .toLowerCase()
-            .includes(searchText) ||
+            (lead.email || "")
+                .toLowerCase()
+                .includes(searchText) ||
 
-        (lead.phone || "")
-            .toLowerCase()
-            .includes(searchText)
-    );
+            (lead.phone || "")
+                .toLowerCase()
+                .includes(searchText)
+        );
 
-});
+    });
 
     return (
         <div className="min-h-screen bg-slate-50 p-10">
 
-            <h1 className="text-4xl font-bold mb-8">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-8">
                 Demo Requests
             </h1>
 
@@ -137,10 +137,10 @@ export default function LeadsPage() {
                 type="text"
                 placeholder="Search leads..."
                 value={search}
-                onBlur={(e) => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="w-full mb-8 border rounded-2xl p-4"
             />
-            <div className="grid md:grid-cols-4 gap-6 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
 
                 <div className="bg-white rounded-3xl shadow p-6">
                     <div className="text-sm text-slate-500">
