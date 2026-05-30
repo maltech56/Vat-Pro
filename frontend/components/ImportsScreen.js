@@ -264,8 +264,7 @@ export default function ImportsScreen() {
         throw new Error("Failed to fetch batch details");
       }
 
-      const data = response;
-
+      const data = await response.json();
 
       setSelectedBatch(data.batch);
       setSelectedBatchItems(data.items);
@@ -1016,50 +1015,50 @@ export default function ImportsScreen() {
     );
   };
 
- const connectQuickBooks = async () => {
+  const connectQuickBooks = async () => {
     if (!selectedCompany?.id) {
-        Alert.alert(
-            "No Company Selected",
-            "Please select a company first."
-        );
-        return;
+      Alert.alert(
+        "No Company Selected",
+        "Please select a company first."
+      );
+      return;
     }
 
     try {
-        const token = getToken();
+      const token = getToken();
 
-        const response = await fetch(
-            `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                data.error || "Failed to connect QuickBooks"
-            );
+      const response = await fetch(
+        `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        window.location.href = data.authUri;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to connect QuickBooks"
+        );
+      }
+
+      window.location.href = data.authUri;
 
     } catch (error) {
-        console.error(
-            "QuickBooks connect error:",
-            error
-        );
+      console.error(
+        "QuickBooks connect error:",
+        error
+      );
 
-        Alert.alert(
-            "QuickBooks Error",
-            error.message ||
-                "Failed to connect QuickBooks"
-        );
+      Alert.alert(
+        "QuickBooks Error",
+        error.message ||
+        "Failed to connect QuickBooks"
+      );
     }
-};
+  };
 
   const handleChooseFile = async () => {
     try {
@@ -2005,11 +2004,12 @@ export default function ImportsScreen() {
 
                 <View style={styles.rowFooter}>
                   <Text style={styles.rowFooterText}>
-                    {confidence !== null && confidence !== undefined && (
-                      <Text style={styles.ocrConfidenceText}>
-                        OCR Confidence: {row.confidence}%
-                      </Text>
-                    )}
+                    {row.confidence !== null &&
+                      row.confidence !== undefined && (
+                        <Text style={styles.ocrConfidenceText}>
+                          OCR Confidence: {row.confidence}%
+                        </Text>
+                      )}
                     VAT: {formatCurrency(row.vatAmount || 0)}
                   </Text>
 
