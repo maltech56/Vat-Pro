@@ -77,31 +77,20 @@ exports.quickBooksCallback = async (req, res) => {
         }
 
         await pool.query(
-            `
-      INSERT INTO quickbooks_connections (
-        company_id,
-        realm_id,
-        access_token,
-        refresh_token,
-        token_expires_at,
-        created_at,
-        updated_at
-      )
-      VALUES ($1, $2, $3, $4, NOW() + ($5 || ' seconds')::interval, NOW(), NOW())
-      ON CONFLICT (company_id)
-      DO UPDATE SET
-        realm_id = EXCLUDED.realm_id,
-        access_token = EXCLUDED.access_token,
-        refresh_token = EXCLUDED.refresh_token,
-        token_expires_at = EXCLUDED.token_expires_at,
-        updated_at = NOW()
-      `,
-            [companyId, realmId, accessToken, refreshToken, expiresIn]
-        );
+  `
+  INSERT INTO quickbooks_connections (...)
+  `,
+  [companyId, realmId, accessToken, refreshToken, expiresIn]
+);
 
-        return res.redirect(
-            "https://vat-pro-frontend.onrender.com/settings?quickbooks=connected"
-        );
+console.log(
+  "REDIRECT TARGET:",
+  "https://vat-pro-frontend.onrender.com/settings?quickbooks=connected"
+);
+
+return res.redirect(
+  "https://vat-pro-frontend.onrender.com/settings?quickbooks=connected"
+);
     } catch (error) {
         console.error("QuickBooks callback error:", error);
 
