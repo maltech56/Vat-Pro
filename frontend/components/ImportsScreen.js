@@ -1016,18 +1016,50 @@ export default function ImportsScreen() {
     );
   };
 
-  const connectQuickBooks = () => {
+ const connectQuickBooks = async () => {
     if (!selectedCompany?.id) {
-      Alert.alert(
-        "No Company Selected",
-        "Please select a company first."
-      );
-      return;
+        Alert.alert(
+            "No Company Selected",
+            "Please select a company first."
+        );
+        return;
     }
 
-    window.location.href =
-      `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`;
-  };
+    try {
+        const token = getToken();
+
+        const response = await fetch(
+            `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Failed to connect QuickBooks"
+            );
+        }
+
+        window.location.href = data.authUri;
+
+    } catch (error) {
+        console.error(
+            "QuickBooks connect error:",
+            error
+        );
+
+        Alert.alert(
+            "QuickBooks Error",
+            error.message ||
+                "Failed to connect QuickBooks"
+        );
+    }
+};
 
   const handleChooseFile = async () => {
     try {
