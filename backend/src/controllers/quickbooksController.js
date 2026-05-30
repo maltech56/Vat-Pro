@@ -100,7 +100,7 @@ exports.quickBooksCallback = async (req, res) => {
         );
 
         return res.redirect(
-            "https://app.maltechenterprises.com/settings?quickbooks=connected"
+            "https://vat-pro-frontend.onrender.com/settings?quickbooks=connected"
         );
     } catch (error) {
         console.error("QuickBooks callback error:", error);
