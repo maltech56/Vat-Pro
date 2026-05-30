@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 export default function LeadsPage() {
     const [leads, setLeads] = useState<any[]>([]);
+    const [selectedLead, setSelectedLead] = useState<any>(null);
 
     useEffect(() => {
         fetch("http://localhost:5000/api/leads")
@@ -14,6 +15,115 @@ export default function LeadsPage() {
 
     const [search, setSearch] = useState("");
 
+    const updateStatus = async (
+        id: string,
+        status: string
+    ) => {
+
+        console.log(
+            "STATUS CHANGE CLICKED",
+            id,
+            status
+        );
+
+        try {
+
+            const response = await fetch(
+                `http://localhost:5000/api/leads/${id}/status`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        status,
+                    }),
+                }
+            );
+
+            setLeads((prev) =>
+                prev.map((lead) =>
+                    lead.id === id
+                        ? { ...lead, status }
+                        : lead
+                )
+            );
+
+        } catch (error) {
+
+            console.error(
+                "STATUS ERROR",
+                error
+            );
+
+        }
+    };
+
+    const updateLeadField = async (
+        id: string,
+        field: string,
+        value: string
+    ) => {
+
+        try {
+
+            await fetch(
+                `http://localhost:5000/api/leads/${id}/notes`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
+                    body: JSON.stringify({
+                        [field]: value,
+                    }),
+                }
+            );
+
+            setLeads((prev) =>
+                prev.map((lead) =>
+                    lead.id === id
+                        ? {
+                            ...lead,
+                            [field]: value,
+                        }
+                        : lead
+                )
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+        }
+
+    };
+
+    const filteredLeads = leads.filter((lead) => {
+
+    const searchText = search.toLowerCase();
+
+    return (
+        (lead.full_name || "")
+            .toLowerCase()
+            .includes(searchText) ||
+
+        (lead.company_name || "")
+            .toLowerCase()
+            .includes(searchText) ||
+
+        (lead.email || "")
+            .toLowerCase()
+            .includes(searchText) ||
+
+        (lead.phone || "")
+            .toLowerCase()
+            .includes(searchText)
+    );
+
+});
+
     return (
         <div className="min-h-screen bg-slate-50 p-10">
 
@@ -22,12 +132,12 @@ export default function LeadsPage() {
             </h1>
 
             <h1>Lead Dashboard</h1>
-            
+
             <input
                 type="text"
                 placeholder="Search leads..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onBlur={(e) => setSearch(e.target.value)}
                 className="w-full mb-8 border rounded-2xl p-4"
             />
             <div className="grid md:grid-cols-4 gap-6 mb-10">
@@ -98,6 +208,8 @@ export default function LeadsPage() {
                             <th className="p-4 text-left">Email</th>
                             <th className="p-4 text-left">Phone</th>
                             <th className="p-4 text-left">Status</th>
+                            <th className="p-4 text-left">Notes</th>
+                            <th className="p-4 text-left">Follow Up</th>
                             <th className="p-4 text-left">Date</th>
                         </tr>
 
@@ -105,7 +217,7 @@ export default function LeadsPage() {
 
                     <tbody>
 
-                        {leads.map((lead) => (
+                        {filteredLeads.map((lead) => (
 
                             <tr
                                 key={lead.id}
@@ -113,7 +225,12 @@ export default function LeadsPage() {
                             >
 
                                 <td className="p-4">
-                                    {lead.full_name}
+                                    <button
+                                        onClick={() => setSelectedLead(lead)}
+                                        className="text-blue-600 underline"
+                                    >
+                                        {lead.full_name}
+                                    </button>
                                 </td>
 
                                 <td className="p-4">
@@ -129,9 +246,55 @@ export default function LeadsPage() {
                                 </td>
 
                                 <td className="p-4">
-                                    <span className="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full">
-                                        {lead.status || "New"}
-                                    </span>
+                                    <select
+                                        value={lead.status || "New"}
+                                        onChange={(e) =>
+                                            updateStatus(
+                                                lead.id,
+                                                e.target.value
+                                            )
+                                        }
+                                        className="border rounded-lg p-2"
+                                    >
+                                        <option>New</option>
+                                        <option>Contacted</option>
+                                        <option>Demo Scheduled</option>
+                                        <option>Proposal Sent</option>
+                                        <option>Customer</option>
+                                        <option>Lost</option>
+                                    </select>
+                                </td>
+                                <td className="p-4">
+                                    <textarea
+                                        defaultValue={lead.notes || ""}
+                                        onBlur={(e) =>
+                                            updateLeadField(
+                                                lead.id,
+                                                "notes",
+                                                e.target.value
+                                            )
+                                        }
+                                        className="border rounded-lg p-2 w-full"
+                                        rows={3}
+                                    />
+                                </td>
+                                <td className="p-4">
+                                    <input
+                                        type="date"
+                                        value={
+                                            lead.next_followup
+                                                ? lead.next_followup.slice(0, 10)
+                                                : ""
+                                        }
+                                        onChange={(e) =>
+                                            updateLeadField(
+                                                lead.id,
+                                                "next_followup",
+                                                e.target.value
+                                            )
+                                        }
+                                        className="border rounded-lg p-2"
+                                    />
                                 </td>
 
                                 <td className="p-4">
@@ -149,6 +312,70 @@ export default function LeadsPage() {
                 </table>
 
             </div>
+
+            {selectedLead && (
+
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                >
+
+                    <div className="bg-white p-8 rounded-2xl w-[900px] shadow-2xl">
+
+                        <h2 className="text-2xl font-bold mb-6">
+                            Lead Details
+                        </h2>
+
+                        <p>
+                            <strong>Name:</strong>{" "}
+                            {selectedLead.full_name}
+                        </p>
+
+                        <p>
+                            <strong>Company:</strong>{" "}
+                            {selectedLead.company_name}
+                        </p>
+
+                        <p>
+                            <strong>Email:</strong>{" "}
+                            {selectedLead.email}
+                        </p>
+
+                        <p>
+                            <strong>Phone:</strong>{" "}
+                            {selectedLead.phone}
+                        </p>
+
+                        <p>
+                            <strong>Status:</strong>{" "}
+                            {selectedLead.status}
+                        </p>
+
+                        <p>
+                            <strong>Notes:</strong>{" "}
+                            {selectedLead.notes}
+                        </p>
+
+                        <p>
+                            <strong>Follow Up:</strong>{" "}
+                            {selectedLead.next_followup
+                                ? new Date(
+                                    selectedLead.next_followup
+                                ).toLocaleDateString()
+                                : "Not Scheduled"}
+                        </p>
+
+                        <button
+                            onClick={() => setSelectedLead(null)}
+                            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg"
+                        >
+                            Close
+                        </button>
+
+                    </div>
+
+                </div>
+
+            )}
 
         </div>
     );
