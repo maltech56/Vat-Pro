@@ -37,7 +37,9 @@ exports.connectQuickBooks = async (req, res) => {
 
         console.log("AUTH URI GENERATED:", authUri);
 
-        return res.redirect(authUri);
+        return res.json({
+            authUri,
+        });
 
     } catch (error) {
         console.error("FULL QUICKBOOKS ERROR:", error);
