@@ -78,13 +78,6 @@ exports.quickBooksCallback = async (req, res) => {
 
         await pool.query(
             `
-  INSERT INTO quickbooks_connections (...)
-  `,
-            [companyId, realmId, accessToken, refreshToken, expiresIn]
-        );
-
-        await pool.query(
-            `
   INSERT INTO quickbooks_connections (
     company_id,
     realm_id,
