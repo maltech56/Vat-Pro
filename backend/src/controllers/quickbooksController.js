@@ -77,42 +77,66 @@ exports.quickBooksCallback = async (req, res) => {
         }
 
         await pool.query(
-  `
+            `
   INSERT INTO quickbooks_connections (...)
   `,
-  [companyId, realmId, accessToken, refreshToken, expiresIn]
-);
+            [companyId, realmId, accessToken, refreshToken, expiresIn]
+        );
 
-await pool.query(
-  `
-  INSERT INTO quickbooks_connections (...)
+        await pool.query(
+            `
+  INSERT INTO quickbooks_connections (
+    company_id,
+    realm_id,
+    access_token,
+    refresh_token,
+    token_expires_at,
+    created_at,
+    updated_at
+  )
+  VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    NOW() + ($5 || ' seconds')::interval,
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (company_id)
+  DO UPDATE SET
+    realm_id = EXCLUDED.realm_id,
+    access_token = EXCLUDED.access_token,
+    refresh_token = EXCLUDED.refresh_token,
+    token_expires_at = EXCLUDED.token_expires_at,
+    updated_at = NOW()
   `,
-  [companyId, realmId, accessToken, refreshToken, expiresIn]
-);
+            [companyId, realmId, accessToken, refreshToken, expiresIn]
+        );
 
-console.log("====================================");
-console.log("✅ QUICKBOOKS CONNECTED SUCCESSFULLY");
-console.log("Company ID:", companyId);
-console.log("Realm ID:", realmId);
-console.log("====================================");
+        console.log("====================================");
+        console.log("✅ QUICKBOOKS CONNECTED SUCCESSFULLY");
+        console.log("Company ID:", companyId);
+        console.log("Realm ID:", realmId);
+        console.log("====================================");
 
-return res.redirect(
-  "https://vat-pro-frontend.onrender.com/dashboard?quickbooks=connected"
-);
+        return res.redirect(
+            "https://vat-pro-frontend.onrender.com/dashboard?quickbooks=connected"
+        );
 
 
     } catch (error) {
-    console.error("====================================");
-    console.error("❌ QUICKBOOKS CALLBACK FAILED");
-    console.error(error);
-    console.error(error.stack);
-    console.error("====================================");
+        console.error("====================================");
+        console.error("❌ QUICKBOOKS CALLBACK FAILED");
+        console.error(error);
+        console.error(error.stack);
+        console.error("====================================");
 
-    return res.status(500).json({
-        error: "QuickBooks connection failed",
-        message: error.message,
-    });
-}
+        return res.status(500).json({
+            error: "QuickBooks connection failed",
+            message: error.message,
+        });
+    }
 };
 
 exports.disconnectQuickBooks = async (req, res) => {
