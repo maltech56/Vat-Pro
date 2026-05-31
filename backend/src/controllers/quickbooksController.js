@@ -159,3 +159,45 @@ exports.disconnectQuickBooks = async (req, res) => {
         });
     }
 };
+
+exports.getQuickBooksStatus = async (req, res) => {
+    try {
+        const { companyId } = req.params;
+
+        const result = await pool.query(
+            `
+            SELECT
+                company_id,
+                realm_id,
+                updated_at
+            FROM quickbooks_connections
+            WHERE company_id = $1
+            `,
+            [companyId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.json({
+                connected: false,
+            });
+        }
+
+        const connection = result.rows[0];
+
+        return res.json({
+            connected: true,
+            realmId: connection.realm_id,
+            lastUpdated: connection.updated_at,
+        });
+
+    } catch (error) {
+        console.error(
+            "QuickBooks status error:",
+            error
+        );
+
+        return res.status(500).json({
+            error: "Failed to load QuickBooks status",
+        });
+    }
+};
