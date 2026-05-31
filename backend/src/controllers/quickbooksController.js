@@ -83,21 +83,36 @@ exports.quickBooksCallback = async (req, res) => {
   [companyId, realmId, accessToken, refreshToken, expiresIn]
 );
 
-console.log(
-  "REDIRECT TARGET:",
-  "https://vat-pro-frontend.onrender.com/settings?quickbooks=connected"
+await pool.query(
+  `
+  INSERT INTO quickbooks_connections (...)
+  `,
+  [companyId, realmId, accessToken, refreshToken, expiresIn]
 );
+
+console.log("====================================");
+console.log("✅ QUICKBOOKS CONNECTED SUCCESSFULLY");
+console.log("Company ID:", companyId);
+console.log("Realm ID:", realmId);
+console.log("====================================");
 
 return res.redirect(
-  "https://vat-pro-frontend.onrender.com/settings?quickbooks=connected"
+  "https://vat-pro-frontend.onrender.com/dashboard?quickbooks=connected"
 );
-    } catch (error) {
-        console.error("QuickBooks callback error:", error);
 
-        return res.status(500).json({
-            error: "QuickBooks connection failed",
-        });
-    }
+
+    } catch (error) {
+    console.error("====================================");
+    console.error("❌ QUICKBOOKS CALLBACK FAILED");
+    console.error(error);
+    console.error(error.stack);
+    console.error("====================================");
+
+    return res.status(500).json({
+        error: "QuickBooks connection failed",
+        message: error.message,
+    });
+}
 };
 
 exports.disconnectQuickBooks = async (req, res) => {
