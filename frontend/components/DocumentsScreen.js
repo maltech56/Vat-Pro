@@ -291,13 +291,18 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch transactions");
       }
 
-      setTransactions(Array.isArray(data) ? data : data.transactions || []);
+      setTransactions(
+        Array.isArray(data)
+          ? data
+          : data.transactions || []
+      );
+      
     } catch (error) {
       console.error("fetchTransactions error:", error);
     }
