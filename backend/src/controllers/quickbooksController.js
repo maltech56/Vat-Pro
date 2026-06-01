@@ -474,3 +474,74 @@ exports.getQuickBooksBills = async (req, res) => {
         });
     }
 };
+
+exports.importQuickBooksCustomers = async (req, res) => {
+    try {
+        const { companyId } = req.params;
+
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
+
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Customer`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
+
+        const data = await response.json();
+
+        const customers =
+            data?.QueryResponse?.Customer || [];
+
+        let imported = 0;
+
+        for (const customer of customers) {
+            await pool.query(
+                `
+                INSERT INTO qb_customers
+                (
+                    company_id,
+                    qb_customer_id,
+                    display_name,
+                    company_name
+                )
+                VALUES ($1,$2,$3,$4)
+                ON CONFLICT
+                (
+                    company_id,
+                    qb_customer_id
+                )
+                DO NOTHING
+                `,
+                [
+                    companyId,
+                    customer.Id,
+                    customer.DisplayName,
+                    customer.CompanyName || null,
+                ]
+            );
+
+            imported++;
+        }
+
+        return res.json({
+            success: true,
+            imported,
+        });
+
+    } catch (error) {
+        console.error(
+            "QB CUSTOMER IMPORT ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            error: "Failed to import customers",
+            message: error.message,
+        });
+    }
+};
