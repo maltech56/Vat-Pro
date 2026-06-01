@@ -8,6 +8,7 @@ const {
   quickBooksCallback,
   disconnectQuickBooks,
   getQuickBooksStatus,
+  getQuickBooksCompanyInfo,
 } = require("../controllers/quickbooksController");
 
 router.get(
@@ -21,6 +22,12 @@ router.get(
   "/status/:companyId",
   authMiddleware,
   getQuickBooksStatus
+);
+
+router.get(
+  "/company-info/:companyId",
+  authMiddleware,
+  getQuickBooksCompanyInfo
 );
 
 router.post(
