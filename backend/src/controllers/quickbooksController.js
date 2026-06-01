@@ -44,7 +44,10 @@ const getValidAccessToken = async (companyId) => {
     console.log(
         "QB ACCESS TOKEN EXPIRED - REFRESHING"
     );
-
+    console.log(
+        "Company:",
+        companyId
+    );
     const authResponse =
         await oauthClient.refreshUsingToken(
             refresh_token
@@ -52,6 +55,10 @@ const getValidAccessToken = async (companyId) => {
 
     const tokenData =
         authResponse.getJson();
+
+    console.log(
+        "QB TOKEN REFRESH SUCCESS"
+    );
 
     const newAccessToken =
         tokenData.access_token;
@@ -242,70 +249,6 @@ exports.disconnectQuickBooks = async (req, res) => {
 
         return res.status(500).json({
             error: "Failed to disconnect QuickBooks",
-        });
-    }
-};
-
-exports.getQuickBooksCompanyInfo = async (req, res) => {
-    try {
-        const { companyId } = req.params;
-
-        const result = await pool.query(
-            `
-      SELECT
-        realm_id,
-        access_token
-      FROM quickbooks_connections
-      WHERE company_id = $1
-      `,
-            [companyId]
-        );
-
-        if (!result.rows.length) {
-            return res.status(404).json({
-                error: "QuickBooks not connected"
-            });
-        }
-
-        const {
-            realm_id,
-            access_token
-        } = result.rows[0];
-
-        console.log("QB COMPANY INFO REQUEST");
-        console.log("Company:", companyId);
-        console.log("Realm:", realm_id);
-
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/companyinfo/${realm_id}?minorversion=75`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json"
-                }
-            }
-        );
-
-        const data = await response.json();
-
-        console.log(
-            "QB COMPANY INFO RESPONSE:",
-            JSON.stringify(data, null, 2)
-        );
-
-        return res.json(data);
-
-    } catch (error) {
-
-        console.error(
-            "QuickBooks company info error:",
-            error
-        );
-
-        return res.status(500).json({
-            error: "Failed to load company info",
-            message: error.message
         });
     }
 };
