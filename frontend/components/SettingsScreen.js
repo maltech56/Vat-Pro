@@ -76,6 +76,15 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
   const [quickBooksConnected, setQuickBooksConnected] =
     useState(false);
 
+  const [syncing, setSyncing] = useState(false);
+
+  const [syncResults, setSyncResults] = useState({
+    customers: 0,
+    vendors: 0,
+    invoices: 0,
+    bills: 0,
+  });
+
   useEffect(() => {
     // 🔥 FULL RESET on company change
 
@@ -485,6 +494,165 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
     );
   }
 
+  const syncCustomers = async () => {
+    try {
+      setSyncing(true);
+
+      const token = getToken();
+
+      const response = await fetch(
+        `${API_BASE}/quickbooks/import-customers/${selectedCompany.id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      setSyncResults((prev) => ({
+        ...prev,
+        customers: data.imported || 0,
+      }));
+
+      Alert.alert(
+        "Success",
+        `${data.imported || 0} customers imported`
+      );
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Customer sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const syncVendors = async () => {
+    try {
+      setSyncing(true);
+
+      const token = getToken();
+
+      const response = await fetch(
+        `${API_BASE}/quickbooks/import-vendors/${selectedCompany.id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      setSyncResults((prev) => ({
+        ...prev,
+        vendors: data.imported || 0,
+      }));
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Vendor sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const syncInvoices = async () => {
+    try {
+      setSyncing(true);
+
+      const token = getToken();
+
+      const response = await fetch(
+        `${API_BASE}/quickbooks/import-invoices/${selectedCompany.id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      setSyncResults((prev) => ({
+        ...prev,
+        invoices: data.imported || 0,
+      }));
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Invoice sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const syncBills = async () => {
+    try {
+      setSyncing(true);
+
+      const token = getToken();
+
+      const response = await fetch(
+        `${API_BASE}/quickbooks/import-bills/${selectedCompany.id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      setSyncResults((prev) => ({
+        ...prev,
+        bills: data.imported || 0,
+      }));
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Bill sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const syncAll = async () => {
+    try {
+
+      setSyncing(true);
+
+      await syncCustomers();
+      await syncVendors();
+      await syncInvoices();
+      await syncBills();
+
+      Alert.alert(
+        "Success",
+        "QuickBooks synchronization completed"
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      Alert.alert(
+        "Error",
+        "QuickBooks sync failed"
+      );
+
+    } finally {
+
+      setSyncing(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.pageTitle}>Settings</Text>
@@ -626,7 +794,6 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
           Connect your QuickBooks account to import invoices,
           expenses, and accounting records automatically.
         </Text>
-
         {quickBooksConnected ? (
           <View
             style={{
@@ -640,10 +807,89 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
               style={{
                 color: "#166534",
                 fontWeight: "700",
+                marginBottom: 10,
               }}
             >
               🟢 QuickBooks Connected
             </Text>
+
+            {syncing && (
+              <Text
+                style={{
+                  marginBottom: 10,
+                }}
+              >
+                Syncing QuickBooks...
+              </Text>
+            )}
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={syncCustomers}
+              disabled={syncing}
+            >
+              <Text style={styles.saveButtonText}>
+                Import Customers
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={syncVendors}
+              disabled={syncing}
+            >
+              <Text style={styles.saveButtonText}>
+                Import Vendors
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={syncInvoices}
+              disabled={syncing}
+            >
+              <Text style={styles.saveButtonText}>
+                Import Invoices
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={syncBills}
+              disabled={syncing}
+            >
+              <Text style={styles.saveButtonText}>
+                Import Bills
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={syncAll}
+              disabled={syncing}
+            >
+              <Text style={styles.saveButtonText}>
+                Sync All
+              </Text>
+            </TouchableOpacity>
+
+            <View style={{ marginTop: 15 }}>
+              <Text>
+                Customers: {syncResults.customers}
+              </Text>
+
+              <Text>
+                Vendors: {syncResults.vendors}
+              </Text>
+
+              <Text>
+                Invoices: {syncResults.invoices}
+              </Text>
+
+              <Text>
+                Bills: {syncResults.bills}
+              </Text>
+            </View>
           </View>
         ) : (
           <TouchableOpacity
