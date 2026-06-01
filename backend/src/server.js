@@ -101,7 +101,18 @@ app.use("/api/import-templates", importTemplateRoutes);
 app.use("/api/import-batches", importBatchRoutes);
 app.use("/api/imports", importRoutes);
 app.use("/api/audit", auditRoutes);
-app.use("/api/quickbooks", quickbooksRoutes);
+
+app.use(
+  "/api/quickbooks", 
+  quickbooksRoutes
+);
+
+app.use(
+  "/api/vat",
+  vatRoutes
+);
+
+const vatRoutes = require("./routes/vatRoutes");
 
 console.log("✅ QUICKBOOKS ROUTES MOUNTED");
 
