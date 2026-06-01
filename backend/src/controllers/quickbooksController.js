@@ -545,3 +545,287 @@ exports.importQuickBooksCustomers = async (req, res) => {
         });
     }
 };
+
+exports.importQuickBooksVendors = async (req, res) => {
+    try {
+
+        const { companyId } = req.params;
+
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
+
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Vendor`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
+
+        const data = await response.json();
+
+        const vendors =
+            data?.QueryResponse?.Vendor || [];
+
+        let imported = 0;
+
+        for (const vendor of vendors) {
+
+            await pool.query(
+                `
+        INSERT INTO qb_vendors
+        (
+          company_id,
+          qb_vendor_id,
+          display_name,
+          company_name,
+          email,
+          phone
+        )
+        VALUES
+        ($1,$2,$3,$4,$5,$6)
+
+        ON CONFLICT
+        (
+          company_id,
+          qb_vendor_id
+        )
+        DO NOTHING
+        `,
+                [
+                    companyId,
+                    vendor.Id,
+                    vendor.DisplayName,
+                    vendor.CompanyName || null,
+                    vendor.PrimaryEmailAddr?.Address || null,
+                    vendor.PrimaryPhone?.FreeFormNumber || null,
+                ]
+            );
+
+            imported++;
+        }
+
+        return res.json({
+            success: true,
+            imported,
+        });
+
+    } catch (error) {
+
+        console.error(
+            "QB VENDOR IMPORT ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            error: "Failed to import vendors",
+            message: error.message,
+        });
+    }
+};
+
+exports.importQuickBooksInvoices = async (req, res) => {
+  try {
+
+    const { companyId } = req.params;
+
+    const { realm_id, access_token } =
+      await getValidAccessToken(companyId);
+
+    const response = await fetch(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    const invoices =
+      data?.QueryResponse?.Invoice || [];
+
+    let imported = 0;
+
+    for (const invoice of invoices) {
+
+      const total =
+        Number(invoice.TotalAmt || 0);
+
+      const vat =
+        Number(
+          invoice.TxnTaxDetail?.TotalTax || 0
+        );
+
+      const subtotal =
+        total - vat;
+
+      await pool.query(
+        `
+        INSERT INTO vat_transactions
+        (
+          company_id,
+          source,
+          source_id,
+          transaction_type,
+          document_number,
+          transaction_date,
+          customer_vendor_name,
+          subtotal,
+          vat_amount,
+          total_amount
+        )
+        VALUES
+        (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
+        )
+
+        ON CONFLICT
+        (
+          company_id,
+          source,
+          source_id
+        )
+        DO NOTHING
+        `,
+        [
+          companyId,
+          "QUICKBOOKS",
+          invoice.Id,
+          "SALE",
+          invoice.DocNumber,
+          invoice.TxnDate,
+          invoice.CustomerRef?.name || null,
+          subtotal,
+          vat,
+          total,
+        ]
+      );
+
+      imported++;
+    }
+
+    return res.json({
+      success: true,
+      imported,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "QB INVOICE IMPORT ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "Failed to import invoices",
+      message: error.message,
+    });
+  }
+};
+
+exports.importQuickBooksBills = async (req, res) => {
+  try {
+
+    const { companyId } = req.params;
+
+    const { realm_id, access_token } =
+      await getValidAccessToken(companyId);
+
+    const response = await fetch(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    const bills =
+      data?.QueryResponse?.Bill || [];
+
+    let imported = 0;
+
+    for (const bill of bills) {
+
+      const total =
+        Number(bill.TotalAmt || 0);
+
+      const vat =
+        Number(
+          bill.TxnTaxDetail?.TotalTax || 0
+        );
+
+      const subtotal =
+        total - vat;
+
+      await pool.query(
+        `
+        INSERT INTO vat_transactions
+        (
+          company_id,
+          source,
+          source_id,
+          transaction_type,
+          document_number,
+          transaction_date,
+          customer_vendor_name,
+          subtotal,
+          vat_amount,
+          total_amount
+        )
+        VALUES
+        (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
+        )
+
+        ON CONFLICT
+        (
+          company_id,
+          source,
+          source_id
+        )
+        DO NOTHING
+        `,
+        [
+          companyId,
+          "QUICKBOOKS",
+          bill.Id,
+          "PURCHASE",
+          bill.DocNumber,
+          bill.TxnDate,
+          bill.VendorRef?.name || null,
+          subtotal,
+          vat,
+          total,
+        ]
+      );
+
+      imported++;
+    }
+
+    return res.json({
+      success: true,
+      imported,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "QB BILL IMPORT ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "Failed to import bills",
+      message: error.message,
+    });
+  }
+};

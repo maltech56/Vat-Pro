@@ -13,6 +13,12 @@ const {
   getQuickBooksVendors,
   getQuickBooksInvoices,
   getQuickBooksBills,
+
+  importQuickBooksCustomers,
+  importQuickBooksVendors,
+  importQuickBooksInvoices,
+  importQuickBooksBills,
+
 } = require("../controllers/quickbooksController");
 
 router.get(
@@ -62,6 +68,30 @@ router.post(
   "/disconnect",
   authMiddleware,
   disconnectQuickBooks
+);
+
+router.post(
+  "/import-customers/:companyId",
+  authMiddleware,
+  importQuickBooksCustomers
+);
+
+router.post(
+  "/import-vendors/:companyId",
+  authMiddleware,
+  importQuickBooksVendors
+);
+
+router.post(
+  "/import-invoices/:companyId",
+  authMiddleware,
+  importQuickBooksInvoices
+);
+
+router.post(
+  "/import-bills/:companyId",
+  authMiddleware,
+  importQuickBooksBills
 );
 
 module.exports = router;
