@@ -9,6 +9,10 @@ const {
   disconnectQuickBooks,
   getQuickBooksStatus,
   getQuickBooksCompanyInfo,
+  getQuickBooksCustomers,
+  getQuickBooksVendors,
+  getQuickBooksInvoices,
+  getQuickBooksBills,
 } = require("../controllers/quickbooksController");
 
 router.get(
