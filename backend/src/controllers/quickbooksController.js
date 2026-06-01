@@ -5,12 +5,14 @@ const OAuthClient = require("intuit-oauth");
 const getQuickBooksConnection = async (companyId) => {
     const result = await pool.query(
         `
-    SELECT
-      realm_id,
-      access_token
-    FROM quickbooks_connections
-    WHERE company_id = $1
-    `,
+        SELECT
+            realm_id,
+            access_token,
+            refresh_token,
+            token_expires_at
+        FROM quickbooks_connections
+        WHERE company_id = $1
+        `,
         [companyId]
     );
 
@@ -19,6 +21,71 @@ const getQuickBooksConnection = async (companyId) => {
     }
 
     return result.rows[0];
+};
+
+const getValidAccessToken = async (companyId) => {
+
+    const connection =
+        await getQuickBooksConnection(companyId);
+
+    const {
+        access_token,
+        refresh_token,
+        token_expires_at
+    } = connection;
+
+    if (
+        token_expires_at &&
+        new Date(token_expires_at) > new Date()
+    ) {
+        return connection;
+    }
+
+    console.log(
+        "QB ACCESS TOKEN EXPIRED - REFRESHING"
+    );
+
+    const authResponse =
+        await oauthClient.refreshUsingToken(
+            refresh_token
+        );
+
+    const tokenData =
+        authResponse.getJson();
+
+    const newAccessToken =
+        tokenData.access_token;
+
+    const newRefreshToken =
+        tokenData.refresh_token;
+
+    const expiresIn =
+        tokenData.expires_in;
+
+    await pool.query(
+        `
+        UPDATE quickbooks_connections
+        SET
+            access_token = $1,
+            refresh_token = $2,
+            token_expires_at =
+                NOW() +
+                ($3 || ' seconds')::interval,
+            updated_at = NOW()
+        WHERE company_id = $4
+        `,
+        [
+            newAccessToken,
+            newRefreshToken,
+            expiresIn,
+            companyId
+        ]
+    );
+
+    return {
+        ...connection,
+        access_token: newAccessToken
+    };
 };
 
 exports.connectQuickBooks = async (req, res) => {
@@ -342,125 +409,125 @@ exports.getQuickBooksCompanyInfo = async (req, res) => {
 };
 
 exports.getQuickBooksCustomers = async (req, res) => {
-  try {
-    const { companyId } = req.params;
+    try {
+        const { companyId } = req.params;
 
-    const { realm_id, access_token } =
-      await getQuickBooksConnection(companyId);
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
 
-    const response = await fetch(
-      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Customer`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: "application/json",
-        },
-      }
-    );
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Customer`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    res.json(data);
+        res.json(data);
 
-  } catch (error) {
-    console.error("QB Customers Error:", error);
+    } catch (error) {
+        console.error("QB Customers Error:", error);
 
-    res.status(500).json({
-      error: "Failed to load customers",
-      message: error.message,
-    });
-  }
+        res.status(500).json({
+            error: "Failed to load customers",
+            message: error.message,
+        });
+    }
 };
 
 exports.getQuickBooksVendors = async (req, res) => {
-  try {
-    const { companyId } = req.params;
+    try {
+        const { companyId } = req.params;
 
-    const { realm_id, access_token } =
-      await getQuickBooksConnection(companyId);
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
 
-    const response = await fetch(
-      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Vendor`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: "application/json",
-        },
-      }
-    );
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Vendor`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    res.json(data);
+        res.json(data);
 
-  } catch (error) {
-    console.error("QB Vendors Error:", error);
+    } catch (error) {
+        console.error("QB Vendors Error:", error);
 
-    res.status(500).json({
-      error: "Failed to load vendors",
-      message: error.message,
-    });
-  }
+        res.status(500).json({
+            error: "Failed to load vendors",
+            message: error.message,
+        });
+    }
 };
 
 exports.getQuickBooksInvoices = async (req, res) => {
-  try {
-    const { companyId } = req.params;
+    try {
+        const { companyId } = req.params;
 
-    const { realm_id, access_token } =
-      await getQuickBooksConnection(companyId);
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
 
-    const response = await fetch(
-      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: "application/json",
-        },
-      }
-    );
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    res.json(data);
+        res.json(data);
 
-  } catch (error) {
-    console.error("QB Invoices Error:", error);
+    } catch (error) {
+        console.error("QB Invoices Error:", error);
 
-    res.status(500).json({
-      error: "Failed to load invoices",
-      message: error.message,
-    });
-  }
+        res.status(500).json({
+            error: "Failed to load invoices",
+            message: error.message,
+        });
+    }
 };
 
 exports.getQuickBooksBills = async (req, res) => {
-  try {
-    const { companyId } = req.params;
+    try {
+        const { companyId } = req.params;
 
-    const { realm_id, access_token } =
-      await getQuickBooksConnection(companyId);
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
 
-    const response = await fetch(
-      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: "application/json",
-        },
-      }
-    );
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    res.json(data);
+        res.json(data);
 
-  } catch (error) {
-    console.error("QB Bills Error:", error);
+    } catch (error) {
+        console.error("QB Bills Error:", error);
 
-    res.status(500).json({
-      error: "Failed to load bills",
-      message: error.message,
-    });
-  }
+        res.status(500).json({
+            error: "Failed to load bills",
+            message: error.message,
+        });
+    }
 };
