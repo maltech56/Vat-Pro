@@ -73,6 +73,9 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
 
   const [changingPassword, setChangingPassword] = useState(false);
 
+  const [quickBooksConnected, setQuickBooksConnected] =
+    useState(false);
+
   useEffect(() => {
     // 🔥 FULL RESET on company change
 
@@ -116,6 +119,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
 
     setLoading(true);
     fetchSettings();
+    loadQuickBooksStatus();
 
   }, [selectedCompany?.id]);
 
@@ -181,6 +185,38 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       Alert.alert("Error", error.message || "Failed to load settings");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadQuickBooksStatus = async () => {
+    try {
+      const token = getToken();
+
+      if (!token || !selectedCompany?.id) {
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE}/quickbooks/status/${selectedCompany.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("QB STATUS:", data);
+
+      setQuickBooksConnected(
+        data.connected === true
+      );
+    } catch (error) {
+      console.error(
+        "QuickBooks status error:",
+        error
+      );
     }
   };
 
@@ -591,14 +627,34 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
           expenses, and accounting records automatically.
         </Text>
 
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleConnectQuickBooks}
-        >
-          <Text style={styles.saveButtonText}>
-            Connect QuickBooks
-          </Text>
-        </TouchableOpacity>
+        {quickBooksConnected ? (
+          <View
+            style={{
+              backgroundColor: "#dcfce7",
+              padding: 14,
+              borderRadius: 12,
+              marginTop: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: "#166534",
+                fontWeight: "700",
+              }}
+            >
+              🟢 QuickBooks Connected
+            </Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleConnectQuickBooks}
+          >
+            <Text style={styles.saveButtonText}>
+              Connect QuickBooks
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.sectionCard}>
