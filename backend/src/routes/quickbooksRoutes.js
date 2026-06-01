@@ -25,6 +25,30 @@ router.get(
 );
 
 router.get(
+  "/customers/:companyId",
+  authMiddleware,
+  getQuickBooksCustomers
+);
+
+router.get(
+  "/vendors/:companyId",
+  authMiddleware,
+  getQuickBooksVendors
+);
+
+router.get(
+  "/invoices/:companyId",
+  authMiddleware,
+  getQuickBooksInvoices
+);
+
+router.get(
+  "/bills/:companyId",
+  authMiddleware,
+  getQuickBooksBills
+);
+
+router.get(
   "/company-info/:companyId",
   authMiddleware,
   getQuickBooksCompanyInfo
