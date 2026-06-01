@@ -149,7 +149,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data?.error || "Failed to load settings");
@@ -358,7 +358,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data?.error || "Failed to save settings");
@@ -425,7 +425,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
         }),
       });
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data?.error || "Failed to change password");
