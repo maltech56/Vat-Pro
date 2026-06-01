@@ -2,6 +2,25 @@ const pool = require("../config/db");
 const oauthClient = require("../services/quickbooksService");
 const OAuthClient = require("intuit-oauth");
 
+const getQuickBooksConnection = async (companyId) => {
+    const result = await pool.query(
+        `
+    SELECT
+      realm_id,
+      access_token
+    FROM quickbooks_connections
+    WHERE company_id = $1
+    `,
+        [companyId]
+    );
+
+    if (!result.rows.length) {
+        throw new Error("QuickBooks not connected");
+    }
+
+    return result.rows[0];
+};
+
 exports.connectQuickBooks = async (req, res) => {
     console.log("🔥 CONNECT QUICKBOOKS HIT");
 
@@ -320,4 +339,128 @@ exports.getQuickBooksCompanyInfo = async (req, res) => {
             message: error.message,
         });
     }
+};
+
+exports.getQuickBooksCustomers = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+
+    const { realm_id, access_token } =
+      await getQuickBooksConnection(companyId);
+
+    const response = await fetch(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Customer`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    res.json(data);
+
+  } catch (error) {
+    console.error("QB Customers Error:", error);
+
+    res.status(500).json({
+      error: "Failed to load customers",
+      message: error.message,
+    });
+  }
+};
+
+exports.getQuickBooksVendors = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+
+    const { realm_id, access_token } =
+      await getQuickBooksConnection(companyId);
+
+    const response = await fetch(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Vendor`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    res.json(data);
+
+  } catch (error) {
+    console.error("QB Vendors Error:", error);
+
+    res.status(500).json({
+      error: "Failed to load vendors",
+      message: error.message,
+    });
+  }
+};
+
+exports.getQuickBooksInvoices = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+
+    const { realm_id, access_token } =
+      await getQuickBooksConnection(companyId);
+
+    const response = await fetch(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    res.json(data);
+
+  } catch (error) {
+    console.error("QB Invoices Error:", error);
+
+    res.status(500).json({
+      error: "Failed to load invoices",
+      message: error.message,
+    });
+  }
+};
+
+exports.getQuickBooksBills = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+
+    const { realm_id, access_token } =
+      await getQuickBooksConnection(companyId);
+
+    const response = await fetch(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    res.json(data);
+
+  } catch (error) {
+    console.error("QB Bills Error:", error);
+
+    res.status(500).json({
+      error: "Failed to load bills",
+      message: error.message,
+    });
+  }
 };
