@@ -2,6 +2,41 @@ const pool = require("../config/db");
 const oauthClient = require("../services/quickbooksService");
 const OAuthClient = require("intuit-oauth");
 
+const logQuickBooksSync = async (
+    companyId,
+    syncType,
+    status,
+    message
+) => {
+    try {
+        await pool.query(
+            `
+      INSERT INTO quickbooks_sync_logs
+      (
+        company_id,
+        sync_type,
+        status,
+        message,
+        synced_at
+      )
+      VALUES
+      ($1,$2,$3,$4,NOW())
+      `,
+            [
+                companyId,
+                syncType,
+                status,
+                message,
+            ]
+        );
+    } catch (err) {
+        console.error(
+            "Failed to write QuickBooks sync log:",
+            err.message
+        );
+    }
+};
+
 const getQuickBooksConnection = async (companyId) => {
     const result = await pool.query(
         `
@@ -254,8 +289,10 @@ exports.disconnectQuickBooks = async (req, res) => {
 };
 
 exports.getQuickBooksStatus = async (req, res) => {
-    try {
-        const { companyId } = req.params;
+    
+    const { companyId } = req.params;
+
+    try { 
 
         const result = await pool.query(
             `
@@ -383,8 +420,9 @@ exports.getQuickBooksCustomers = async (req, res) => {
 };
 
 exports.getQuickBooksVendors = async (req, res) => {
+
+    const { companyId } = req.params;
     try {
-        const { companyId } = req.params;
 
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
@@ -414,8 +452,10 @@ exports.getQuickBooksVendors = async (req, res) => {
 };
 
 exports.getQuickBooksInvoices = async (req, res) => {
+
+    const { companyId } = req.params;
+
     try {
-        const { companyId } = req.params;
 
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
@@ -445,8 +485,9 @@ exports.getQuickBooksInvoices = async (req, res) => {
 };
 
 exports.getQuickBooksBills = async (req, res) => {
+    
+    const { companyId } = req.params;
     try {
-        const { companyId } = req.params;
 
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
@@ -476,8 +517,10 @@ exports.getQuickBooksBills = async (req, res) => {
 };
 
 exports.importQuickBooksCustomers = async (req, res) => {
+    
+    const { companyId } = req.params;
+    
     try {
-        const { companyId } = req.params;
 
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
@@ -528,12 +571,27 @@ exports.importQuickBooksCustomers = async (req, res) => {
             imported++;
         }
 
+        await logQuickBooksSync(
+            companyId,
+            "CUSTOMERS",
+            "SUCCESS",
+            `Imported ${customers.length} customers`
+        );
+
         return res.json({
             success: true,
             imported,
         });
 
     } catch (error) {
+
+        await logQuickBooksSync(
+            companyId,
+            "CUSTOMERS",
+            "FAILED",
+            error.message
+        );
+
         console.error(
             "QB CUSTOMER IMPORT ERROR:",
             error
@@ -547,9 +605,10 @@ exports.importQuickBooksCustomers = async (req, res) => {
 };
 
 exports.importQuickBooksVendors = async (req, res) => {
-    try {
+    
+    const { companyId } = req.params;
 
-        const { companyId } = req.params;
+    try {
 
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
@@ -606,6 +665,12 @@ exports.importQuickBooksVendors = async (req, res) => {
 
             imported++;
         }
+        await logQuickBooksSync(
+            companyId,
+            "VENDORS",
+            "SUCCESS",
+            `Imported ${vendors.length} vendors`
+        );
 
         return res.json({
             success: true,
@@ -613,6 +678,13 @@ exports.importQuickBooksVendors = async (req, res) => {
         });
 
     } catch (error) {
+
+        await logQuickBooksSync(
+            companyId,
+            "VENDORS",
+            "FAILED",
+            error.message
+        );
 
         console.error(
             "QB VENDOR IMPORT ERROR:",
@@ -627,45 +699,46 @@ exports.importQuickBooksVendors = async (req, res) => {
 };
 
 exports.importQuickBooksInvoices = async (req, res) => {
-  try {
 
     const { companyId } = req.params;
+    
+    try {
 
-    const { realm_id, access_token } =
-      await getValidAccessToken(companyId);
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
 
-    const response = await fetch(
-      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: "application/json",
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    const invoices =
-      data?.QueryResponse?.Invoice || [];
-
-    let imported = 0;
-
-    for (const invoice of invoices) {
-
-      const total =
-        Number(invoice.TotalAmt || 0);
-
-      const vat =
-        Number(
-          invoice.TxnTaxDetail?.TotalTax || 0
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
         );
 
-      const subtotal =
-        total - vat;
+        const data = await response.json();
 
-      await pool.query(
-        `
+        const invoices =
+            data?.QueryResponse?.Invoice || [];
+
+        let imported = 0;
+
+        for (const invoice of invoices) {
+
+            const total =
+                Number(invoice.TotalAmt || 0);
+
+            const vat =
+                Number(
+                    invoice.TxnTaxDetail?.TotalTax || 0
+                );
+
+            const subtotal =
+                total - vat;
+
+            await pool.query(
+                `
         INSERT INTO vat_transactions
         (
           company_id,
@@ -692,82 +765,97 @@ exports.importQuickBooksInvoices = async (req, res) => {
         )
         DO NOTHING
         `,
-        [
-          companyId,
-          "QUICKBOOKS",
-          invoice.Id,
-          "SALE",
-          invoice.DocNumber,
-          invoice.TxnDate,
-          invoice.CustomerRef?.name || null,
-          subtotal,
-          vat,
-          total,
-        ]
-      );
+                [
+                    companyId,
+                    "QUICKBOOKS",
+                    invoice.Id,
+                    "SALE",
+                    invoice.DocNumber,
+                    invoice.TxnDate,
+                    invoice.CustomerRef?.name || null,
+                    subtotal,
+                    vat,
+                    total,
+                ]
+            );
 
-      imported++;
+            imported++;
+        }
+
+        await logQuickBooksSync(
+            companyId,
+            "INVOICES",
+            "SUCCESS",
+            `Imported ${invoices.length} invoices`
+        );
+
+        return res.json({
+            success: true,
+            imported,
+        });
+
+    } catch (error) {
+
+        await logQuickBooksSync(
+            companyId,
+            "INVOICES",
+            "FAILED",
+            error.message
+        );
+
+        console.error(
+            "QB INVOICE IMPORT ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            error: "Failed to import invoices",
+            message: error.message,
+        });
     }
-
-    return res.json({
-      success: true,
-      imported,
-    });
-
-  } catch (error) {
-
-    console.error(
-      "QB INVOICE IMPORT ERROR:",
-      error
-    );
-
-    return res.status(500).json({
-      error: "Failed to import invoices",
-      message: error.message,
-    });
-  }
 };
 
 exports.importQuickBooksBills = async (req, res) => {
-  try {
 
     const { companyId } = req.params;
+    
+    try {
 
-    const { realm_id, access_token } =
-      await getValidAccessToken(companyId);
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
 
-    const response = await fetch(
-      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: "application/json",
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    const bills =
-      data?.QueryResponse?.Bill || [];
-
-    let imported = 0;
-
-    for (const bill of bills) {
-
-      const total =
-        Number(bill.TotalAmt || 0);
-
-      const vat =
-        Number(
-          bill.TxnTaxDetail?.TotalTax || 0
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
         );
 
-      const subtotal =
-        total - vat;
+        const data = await response.json();
 
-      await pool.query(
-        `
+        const bills =
+            data?.QueryResponse?.Bill || [];
+
+        let imported = 0;
+
+        for (const bill of bills) {
+
+            const total =
+                Number(bill.TotalAmt || 0);
+
+            const vat =
+                Number(
+                    bill.TxnTaxDetail?.TotalTax || 0
+                );
+
+            const subtotal =
+                total - vat;
+
+            await pool.query(
+                `
         INSERT INTO vat_transactions
         (
           company_id,
@@ -794,38 +882,52 @@ exports.importQuickBooksBills = async (req, res) => {
         )
         DO NOTHING
         `,
-        [
-          companyId,
-          "QUICKBOOKS",
-          bill.Id,
-          "PURCHASE",
-          bill.DocNumber,
-          bill.TxnDate,
-          bill.VendorRef?.name || null,
-          subtotal,
-          vat,
-          total,
-        ]
-      );
+                [
+                    companyId,
+                    "QUICKBOOKS",
+                    bill.Id,
+                    "PURCHASE",
+                    bill.DocNumber,
+                    bill.TxnDate,
+                    bill.VendorRef?.name || null,
+                    subtotal,
+                    vat,
+                    total,
+                ]
+            );
 
-      imported++;
+            imported++;
+        }
+
+        await logQuickBooksSync(
+            companyId,
+            "BILLS",
+            "SUCCESS",
+            `Imported ${bills.length} bills`
+        );
+
+        return res.json({
+            success: true,
+            imported,
+        });
+
+    } catch (error) {
+
+        await logQuickBooksSync(
+            companyId,
+            "BILLS",
+            "FAILED",
+            error.message
+        );
+
+        console.error(
+            "QB BILL IMPORT ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            error: "Failed to import bills",
+            message: error.message,
+        });
     }
-
-    return res.json({
-      success: true,
-      imported,
-    });
-
-  } catch (error) {
-
-    console.error(
-      "QB BILL IMPORT ERROR:",
-      error
-    );
-
-    return res.status(500).json({
-      error: "Failed to import bills",
-      message: error.message,
-    });
-  }
 };
