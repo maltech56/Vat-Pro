@@ -17,6 +17,7 @@ import {
 } from "../services/dashboardService";
 
 export default function DashboardScreen({ token }) {
+  const { selectedCompany, companyReady } = useCompany();
   const [overview, setOverview] = useState(null);
   const [monthlyVAT, setMonthlyVAT] = useState([]);
   const [classification, setClassification] = useState(null);
@@ -40,7 +41,7 @@ export default function DashboardScreen({ token }) {
     loadDashboard(selectedCompany.id);
   }, [companyReady, selectedCompany?.id]);
 
-  const { selectedCompany, companyReady } = useCompany();
+
 
   const loadDashboard = async (companyId) => {
     try {
@@ -71,6 +72,15 @@ export default function DashboardScreen({ token }) {
   };
 
   if (loading) {
+
+    console.log("selectedCompany:", selectedCompany);
+    console.log("companyReady:", companyReady);
+    console.log("overview:", overview);
+    console.log("monthlyVAT:", monthlyVAT);
+    console.log("classification:", classification);
+    console.log("transactions:", transactions);
+    console.log("vatSummary:", vatSummary);
+    
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
