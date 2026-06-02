@@ -74,3 +74,22 @@ export async function fetchCompanyTransactions(companyId, token) {
 
   return data;
 }
+
+export async function fetchVatSummary(companyId, token) {
+  const response = await fetch(
+    `${API_BASE}/vat/summary/${companyId}`,
+    {
+      headers: getAuthHeaders(token),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.error || "Failed to load VAT summary"
+    );
+  }
+
+  return data;
+}
