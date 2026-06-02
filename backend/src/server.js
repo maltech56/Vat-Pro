@@ -20,6 +20,7 @@ const quickbooksRoutes = require("./routes/quickbooksRoutes");
 const demoRoutes = require("./routes/demoRoutes");
 const leadRoutes = require("./routes/leadRoutes");
 const activityRoutes = require("./routes/activityRoutes");
+const vatRoutes = require("./routes/vatRoutes");
 
 console.log("✅ activityRoutes imported");
 
@@ -111,8 +112,6 @@ app.use(
   "/api/vat",
   vatRoutes
 );
-
-const vatRoutes = require("./routes/vatRoutes");
 
 console.log("✅ QUICKBOOKS ROUTES MOUNTED");
 
