@@ -60,6 +60,7 @@ export default function DashboardScreen({ token }) {
       ]);
 
       setOverview(overviewData);
+      
       setMonthlyVAT(monthlyData);
       setClassification(classData);
       setTransactions(txData);
