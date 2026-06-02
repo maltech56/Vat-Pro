@@ -15,7 +15,7 @@ export async function fetchOverview(companyId, token) {
     }
   );
 
-  const data = response;
+  const data = await response.json();
 
   if (!response.ok) {
     throw new Error(data.error || "Failed to load overview");
@@ -32,7 +32,7 @@ export async function fetchMonthlyVAT(companyId, token) {
     }
   );
 
-  const data = response;
+  const data = await response.json();
 
   if (!response.ok) {
     throw new Error(data.error || "Failed to load monthly VAT");
@@ -49,7 +49,7 @@ export async function fetchClassificationBreakdown(companyId, token) {
     }
   );
 
-  const data = response;
+  const data = await response.json();
 
   if (!response.ok) {
     throw new Error(data.error || "Failed to load classification breakdown");
@@ -66,7 +66,7 @@ export async function fetchCompanyTransactions(companyId, token) {
     }
   );
 
-  const data = response;
+  const data = await response.json();
 
   if (!response.ok) {
     throw new Error(data.error || "Failed to load transactions");
