@@ -71,16 +71,15 @@ export default function DashboardScreen({ token }) {
     }
   };
 
-  if (loading) {
+  console.log("selectedCompany:", selectedCompany);
+  console.log("companyReady:", companyReady);
+  console.log("overview:", overview);
+  console.log("monthlyVAT:", monthlyVAT);
+  console.log("classification:", classification);
+  console.log("transactions:", transactions);
+  console.log("vatSummary:", vatSummary);
 
-    console.log("selectedCompany:", selectedCompany);
-    console.log("companyReady:", companyReady);
-    console.log("overview:", overview);
-    console.log("monthlyVAT:", monthlyVAT);
-    console.log("classification:", classification);
-    console.log("transactions:", transactions);
-    console.log("vatSummary:", vatSummary);
-    
+  if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
