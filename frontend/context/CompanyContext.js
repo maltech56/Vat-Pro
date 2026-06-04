@@ -34,6 +34,9 @@ export const CompanyProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchCompanies = async () => {
+
+      console.count("CompanyContext fetchCompanies");
+
       try {
         const token = getToken();
         if (!token) {
@@ -41,6 +44,12 @@ export const CompanyProvider = ({ children }) => {
           setSelectedCompanyState(null);
           return;
         }
+
+        console.log("TOKEN:", token);
+        console.log(
+          "TOKEN EXISTS:",
+          !!token
+        );
 
         const response = await fetch(
           `${process.env.EXPO_PUBLIC_API_URL ||
@@ -55,11 +64,24 @@ export const CompanyProvider = ({ children }) => {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("FETCH COMPANIES ERROR:", {
-            status: response.status,
-            statusText: response.statusText,
-            response: errorText,
-          });
+          console.error(
+            "FETCH COMPANIES ERROR"
+          );
+
+          console.error(
+            "STATUS:",
+            response.status
+          );
+
+          console.error(
+            "STATUS TEXT:",
+            response.statusText
+          );
+
+          console.error(
+            "BODY:",
+            errorText
+          );
           setCompanies([]);
           return;
         }

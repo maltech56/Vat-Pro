@@ -10,6 +10,7 @@ import ReportsScreen from "../components/ReportsScreen";
 import SettingsScreen from "../components/SettingsScreen";
 import CreateCompanyScreen from "../components/CreateCompanyScreen";
 import AuditDashboardScreen from "../components/AuditDashboardScreen";
+import ErrorBoundary from "../components/ErrorBoundary";
 import {
   View,
   Text,
@@ -337,55 +338,55 @@ export default function Dashboard() {
   ]);
 
   const fetchCompanies = useCallback(async () => {
-  try {
-    setCompaniesLoading(true);
-    setCompanyError("");
+    try {
+      setCompaniesLoading(true);
+      setCompanyError("");
 
-    if (!user?.id) {
-      setCompanyError("User information is missing. Please log in again.");
-      return;
-    }
-
-    const response = await apiFetch(`/companies/user`);
-    if (!response) return;
-
-    const data = response;
-
-    const companyList = Array.isArray(data) ? data : [];
-    setCompanies(companyList);
-
-    if (companyList.length === 0) {
-      setSelectedCompany(null);
-      return;
-    }
-
-    const currentId = selectedCompany?.id;
-
-    const matchedCurrent = companyList.find(
-      (company) => String(company.id) === String(currentId)
-    );
-
-    if (!currentId || !matchedCurrent) {
-      const fallbackCompany = companyList[0];
-
-      if (
-        fallbackCompany?.id &&
-        String(fallbackCompany.id) !== String(selectedCompany?.id)
-      ) {
-        setSelectedCompany(fallbackCompany);
+      if (!user?.id) {
+        setCompanyError("User information is missing. Please log in again.");
+        return;
       }
 
-      return;
-    }
-  } catch (err) {
-    console.error("fetchCompanies error:", err);
-    setCompanyError(err.message || "Failed to load companies");
-  } finally {
-    setCompaniesLoading(false);
-  }
-}, [selectedCompany?.id, setSelectedCompany, user?.id]);
+      const response = await apiFetch(`/companies/user`);
+      if (!response) return;
 
-  
+      const data = response;
+
+      const companyList = Array.isArray(data) ? data : [];
+      setCompanies(companyList);
+
+      if (companyList.length === 0) {
+        setSelectedCompany(null);
+        return;
+      }
+
+      const currentId = selectedCompany?.id;
+
+      const matchedCurrent = companyList.find(
+        (company) => String(company.id) === String(currentId)
+      );
+
+      if (!currentId || !matchedCurrent) {
+        const fallbackCompany = companyList[0];
+
+        if (
+          fallbackCompany?.id &&
+          String(fallbackCompany.id) !== String(selectedCompany?.id)
+        ) {
+          setSelectedCompany(fallbackCompany);
+        }
+
+        return;
+      }
+    } catch (err) {
+      console.error("fetchCompanies error:", err);
+      setCompanyError(err.message || "Failed to load companies");
+    } finally {
+      setCompaniesLoading(false);
+    }
+  }, [selectedCompany?.id, setSelectedCompany, user?.id]);
+
+
   const fetchOverview = useCallback(async () => {
     try {
       setLoading(true);
@@ -547,33 +548,33 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-  // 🔥 Reset ALL company-dependent state on company change
+    // 🔥 Reset ALL company-dependent state on company change
 
-  setOverview({
-    totalSales: 0,
-    outputVAT: 0,
-    inputVAT: 0,
-    netVATPayable: 0,
-  });
+    setOverview({
+      totalSales: 0,
+      outputVAT: 0,
+      inputVAT: 0,
+      netVATPayable: 0,
+    });
 
-  setAuditSummary({
-    unlinkedCount: 0,
-    linkedCount: 0,
-    totalDocuments: 0,
-  });
+    setAuditSummary({
+      unlinkedCount: 0,
+      linkedCount: 0,
+      totalDocuments: 0,
+    });
 
-  setCompanySettings(null);
-  setVatAlert(null);
-  setError("");
+    setCompanySettings(null);
+    setVatAlert(null);
+    setError("");
 
-  // Optional but clean UX reset
-  setSelectedMonth("");
-  setSelectedQuarter("Q1");
-  setSelectedYear(String(new Date().getFullYear()));
-  setStartDate("");
-  setEndDate("");
+    // Optional but clean UX reset
+    setSelectedMonth("");
+    setSelectedQuarter("Q1");
+    setSelectedYear(String(new Date().getFullYear()));
+    setStartDate("");
+    setEndDate("");
 
-}, [selectedCompany?.id]);
+  }, [selectedCompany?.id]);
 
   if (loading && !selectedCompany) {
     return (
@@ -1050,12 +1051,14 @@ export default function Dashboard() {
               </View>
 
               <View style={styles.sectionSpacing}>
-                <RecentTransactions
-                  key={`${selectedCompany?.id || "none"}-${refreshKey}`}
-                  refreshKey={refreshKey}
-                  startDate={getDateRange().start || ""}
-                  endDate={getDateRange().end || ""}
-                />
+                <ErrorBoundary>
+                  <RecentTransactions
+                    key={`${selectedCompany?.id || "none"}-${refreshKey}`}
+                    refreshKey={refreshKey}
+                    startDate={getDateRange().start || ""}
+                    endDate={getDateRange().end || ""}
+                  />
+                </ErrorBoundary>
               </View>
             </ScrollView>
           </View>
