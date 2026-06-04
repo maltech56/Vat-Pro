@@ -32,12 +32,17 @@ export default function RecentTransactions({
   const [error, setError] = useState("");
 
   const fetchRecentTransactions = useCallback(async () => {
+    
+    console.log("fetchRecentTransactions running");
+    
     try {
       setLoading(true);
       setError("");
 
       const token = getToken();
       const company = getSelectedCompany();
+
+      console.log("Selected company:", company);
 
       if (!token) {
         setError("No token found.");
@@ -68,6 +73,8 @@ export default function RecentTransactions({
 
       const data = await response.json();
 
+      console.log("Recent transactions response:", data);
+
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch recent transactions");
       }
@@ -79,7 +86,7 @@ export default function RecentTransactions({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [startDate, endDate]);
 
   useEffect(() => {
     fetchRecentTransactions();
