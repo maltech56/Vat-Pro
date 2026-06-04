@@ -1,10 +1,11 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const createDefaultCompanySettings = require("../utils/createDefaultCompanySettings");
 
 // ================= LOGIN =================
 exports.login = async (req, res) => {
- 
+
   try {
     const { email, password } = req.body;
 
@@ -22,7 +23,7 @@ exports.login = async (req, res) => {
     }
 
     const user = result.rows[0];
-    
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -47,6 +48,144 @@ exports.login = async (req, res) => {
   } catch (error) {
     console.error("🔥 LOGIN CRASH:", error);
     res.status(500).json({ message: "Server error during login" });
+  }
+};
+
+exports.register = async (req, res) => {
+  let client;
+
+  try {
+    const {
+      companyName,
+      email,
+      password,
+      phone
+    } = req.body;
+
+    if (!companyName || !email || !password) {
+      return res.status(400).json({
+        error: "Company name, email and password are required"
+      });
+    }
+
+    const existingUser = await pool.query(
+      "SELECT id FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({
+        error: "Email already exists"
+      });
+    }
+
+    client = await pool.connect();
+    await client.query("BEGIN");
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const userResult = await client.query(
+      `
+      INSERT INTO users
+      (
+        email,
+        password,
+        role
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        'admin'
+      )
+      RETURNING *
+      `,
+      [email, hashedPassword]
+    );
+
+    const user = userResult.rows[0];
+
+    const companyResult = await client.query(
+      `
+      INSERT INTO companies
+      (
+        name,
+        email,
+        phone,
+        trial_start_date,
+        trial_end_date,
+        subscription_status
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        $3,
+        NOW(),
+        NOW() + INTERVAL '14 days',
+        'TRIAL'
+      )
+      RETURNING *
+      `,
+      [
+        companyName,
+        email,
+        phone || null
+      ]
+    );
+
+    const company = companyResult.rows[0];
+
+    await client.query(
+      `
+      INSERT INTO user_companies
+      (
+        user_id,
+        company_id,
+        role
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        'admin'
+      )
+      `,
+      [user.id, company.id]
+    );
+
+    await createDefaultCompanySettings(
+      company.id,
+      client
+    );
+
+    await client.query("COMMIT");
+
+    return res.status(201).json({
+      success: true,
+      userId: user.id,
+      companyId: company.id,
+      trialEnds: company.trial_end_date
+    });
+
+  } catch (error) {
+
+    if (client) {
+      await client.query("ROLLBACK");
+    }
+
+    console.error("REGISTER ERROR:", error);
+
+    return res.status(500).json({
+      error: "Registration failed"
+    });
+
+  } finally {
+
+    if (client) {
+      client.release();
+    }
+
   }
 };
 

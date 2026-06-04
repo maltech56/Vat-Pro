@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+
 
 export default function Hero() {
     return (
@@ -34,13 +36,28 @@ export default function Hero() {
                     </p>
 
                     <div className="flex flex-wrap gap-4">
-                        <button className="bg-cyan-600 hover:bg-cyan-700 text-white px-7 py-4 rounded-2xl font-semibold">
-                            Start Free Trial
-                        </button>
 
-                        <button className="border border-slate-300 hover:border-slate-500 px-7 py-4 rounded-2xl font-semibold">
+                        <Link
+                            href="/signup"
+                            className="bg-cyan-600 hover:bg-cyan-700 text-white px-7 py-4 rounded-2xl font-semibold transition"
+                        >
+                            Start Free Trial
+                        </Link>
+
+                        <Link
+                            href="/demo-request"
+                            className="border border-slate-300 hover:border-slate-500 px-7 py-4 rounded-2xl font-semibold transition"
+                        >
                             Book a Demo
-                        </button>
+                        </Link>
+
+                        <Link
+                            href="/consultation-request"
+                            className="bg-white border border-cyan-600 text-cyan-700 hover:bg-cyan-50 px-7 py-4 rounded-2xl font-semibold transition"
+                        >
+                            Schedule a Consultation
+                        </Link>
+
                     </div>
                     <div className="mt-10 flex flex-wrap gap-8 text-sm text-slate-600">
 
@@ -69,7 +86,7 @@ export default function Hero() {
                             alt="Maltech VAT Pro Dashboard"
                             className="rounded-2xl shadow-2xl border"
                         />
-                        
+
                     </div>
                 </div>
             </div>

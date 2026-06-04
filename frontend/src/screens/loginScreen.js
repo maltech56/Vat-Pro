@@ -9,7 +9,10 @@ import {
 } from "react-native";
 import { loginUser } from "../services/authService";
 
-export default function LoginScreen({ onLogin }) {
+export default function LoginScreen({
+  onLogin,
+  onShowRegister,
+}) {
   const [email, setEmail] = useState("dwight@test.com");
   const [password, setPassword] = useState("123456");
   const [loading, setLoading] = useState(false);
@@ -64,6 +67,15 @@ export default function LoginScreen({ onLogin }) {
           {loading ? "Logging in..." : "Login"}
         </Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.registerButton}
+        onPress={onShowRegister}
+      >
+        <Text style={styles.registerText}>
+          Start Free Trial
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -100,4 +112,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
+  registerButton: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+
+  registerText: {
+    color: "#2563EB",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+
 });
