@@ -1,5 +1,5 @@
 // ✅ CORRECT
-const db = require("../config/db");
+const pool = require("../config/db");
 
 const seedDemoData = async (req, res) => {
   const client = await pool.connect();
