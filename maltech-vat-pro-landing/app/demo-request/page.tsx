@@ -140,9 +140,25 @@ export default function DemoRequestPage() {
         </button>
 
         {success && (
-          <p className="text-green-600 font-medium">
-            {success}
-          </p>
+          <div className="mt-6 space-y-4">
+            <p className="text-green-600 font-medium">
+              {success}
+            </p>
+
+            <p className="text-slate-600">
+              While you wait for your demo appointment,
+              you can start using Maltech VAT Pro immediately.
+            </p>
+
+            <a
+              href="https://vat-pro-frontend.onrender.com/register"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-xl font-medium"
+            >
+              Start Free Trial
+            </a>
+          </div>
         )}
       </form>
     </main>
