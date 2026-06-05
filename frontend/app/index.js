@@ -16,47 +16,47 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const login = async () => {
-  try {
-    console.log("Trying login...");
+    try {
+      console.log("Trying login...");
 
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email.trim().toLowerCase(),
-        password,
-      }),
-    });
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
 
-    console.log("HTTP status:", res.status);
+      console.log("HTTP status:", res.status);
 
-    const data = await res.json();
-    console.log("LOGIN RESPONSE:", data);
+      const data = await res.json();
+      console.log("LOGIN RESPONSE:", data);
 
-    if (!res.ok) {
-      alert(data.error || data.message || "Invalid email or password");
-      return;
+      if (!res.ok) {
+        alert(data.error || data.message || "Invalid email or password");
+        return;
+      }
+
+      if (!data.token) {
+        alert("Login succeeded but no token was returned.");
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        localStorage.removeItem("user");
+      }
+
+      router.replace("/dashboard");
+    } catch (err) {
+      console.error("LOGIN FETCH ERROR:", err);
+      alert("Login request failed. Check backend logs.");
     }
-
-    if (!data.token) {
-      alert("Login succeeded but no token was returned.");
-      return;
-    }
-
-    localStorage.setItem("token", data.token);
-
-    if (data.user) {
-      localStorage.setItem("user", JSON.stringify(data.user));
-    } else {
-      localStorage.removeItem("user");
-    }
-
-    router.replace("/dashboard");
-  } catch (err) {
-    console.error("LOGIN FETCH ERROR:", err);
-    alert("Login request failed. Check backend logs.");
-  }
-};
+  };
 
   return (
     <View style={styles.page}>
@@ -97,8 +97,22 @@ export default function Login() {
             secureTextEntry
           />
 
-          <TouchableOpacity style={styles.loginButton} onPress={login}>
-            <Text style={styles.loginButtonText}>Sign In</Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={login}
+          >
+            <Text style={styles.loginButtonText}>
+              Sign In
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.trialButton}
+            onPress={() => router.push("/register")}
+          >
+            <Text style={styles.trialButtonText}>
+              Start Free 14-Day Trial
+            </Text>
           </TouchableOpacity>
 
           <Text style={styles.footerText}>
@@ -200,6 +214,16 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  trialButton: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+
+  trialButtonText: {
+    color: "#0F3D91",
     fontSize: 15,
     fontWeight: "800",
   },

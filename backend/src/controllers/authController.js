@@ -62,7 +62,10 @@ exports.register = async (req, res) => {
       phone
     } = req.body;
 
+    console.log("REGISTER BODY:", req.body);
+
     if (!companyName || !email || !password) {
+      console.log("MISSING FIELD DETECTED");
       return res.status(400).json({
         error: "Company name, email and password are required"
       });
@@ -74,6 +77,8 @@ exports.register = async (req, res) => {
     );
 
     if (existingUser.rows.length > 0) {
+      console.log("EMAIL ALREADY EXISTS:", email);
+
       return res.status(400).json({
         error: "Email already exists"
       });

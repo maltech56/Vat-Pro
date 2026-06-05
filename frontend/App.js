@@ -1,24 +1,17 @@
-import React, { useState } from "react";
-import LoginScreen from "./src/screens/LoginScreen";
-import RegisterScreen from "./src/screens/RegisterScreen";
-import DashboardScreen from "./src/screens/DashBoardScreen";
+import { View, Text } from "react-native";
 
 export default function App() {
-  const [token, setToken] = useState(null);
-  const [showRegister, setShowRegister] = useState(false);
-
-  if (!token) {
-    return showRegister ? (
-      <RegisterScreen
-        onBackToLogin={() => setShowRegister(false)}
-      />
-    ) : (
-      <LoginScreen
-        onLogin={setToken}
-        onShowRegister={() => setShowRegister(true)}
-      />
-    );
-  }
-
-  return <DashboardScreen token={token} />;
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text style={{ fontSize: 30 }}>
+        APP.JS IS RUNNING
+      </Text>
+    </View>
+  );
 }
