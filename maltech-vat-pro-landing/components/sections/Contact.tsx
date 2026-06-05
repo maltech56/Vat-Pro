@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const API_BASE =
-  window.location.hostname === "localhost"
+  process.env.NODE_ENV === "development"
     ? "http://localhost:5000/api"
     : "https://api.maltechenterprises.com/api";
 
