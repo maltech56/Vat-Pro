@@ -1,17 +1,30 @@
+"use client";
+
+import { useEffect } from "react";
+
 export default function SignupPage() {
-    return (
-        <main className="max-w-4xl mx-auto px-6 py-24">
-            <h1 className="text-4xl font-bold mb-6">
-                Start Your Free Trial
-            </h1>
+  useEffect(() => {
+    window.location.href =
+      "https://vat-pro-frontend.onrender.com/register";
+  }, []);
 
-            <p className="text-lg text-slate-600 mb-8">
-                Get full access to Maltech VAT Pro for 14 days.
-            </p>
+  return (
+    <main className="max-w-4xl mx-auto px-6 py-24 text-center">
+      <h1 className="text-5xl font-bold mb-6">
+        Redirecting to VAT Pro Registration...
+      </h1>
 
-            <div className="bg-white border rounded-2xl p-8">
-                Signup form coming soon.
-            </div>
-        </main>
-    );
+      <p>
+        If you are not redirected automatically,
+        click the button below.
+      </p>
+
+      <a
+        href="https://vat-pro-frontend.onrender.com/register"
+        className="inline-block mt-8 bg-cyan-600 text-white px-8 py-4 rounded-xl"
+      >
+        Continue
+      </a>
+    </main>
+  );
 }
