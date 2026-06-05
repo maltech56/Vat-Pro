@@ -41,41 +41,34 @@ const allowedOrigins = [
   "https://www.maltechdigital.com",
   "https://maltechdigital.com",
   "https://vat-pro-frontend.onrender.com",
+  "https://maltech-vat-pro-landing.onrender.com",
 ].filter(Boolean);
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow tools like Postman, curl, mobile apps, and Render checks
-      if (!origin) {
-        return callback(null, true);
-      }
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
 
-      // Development only: allow any localhost / 127.0.0.1 port
-      if (process.env.NODE_ENV !== "production") {
-        if (
-          origin.includes("localhost") ||
-          origin.startsWith("http://127.0.0.1:")
-        ) {
-          return callback(null, true);
-        }
-      }
-
-      // Production/staging: only allow approved frontend origins
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      console.warn("Blocked by CORS:", origin);
-      return callback(new Error(`CORS blocked for origin: ${origin}`));
+      console.error(
+        `Blocked by CORS: ${origin}`
+      );
+
+      callback(
+        new Error(`CORS blocked for origin: ${origin}`)
+      );
     },
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use("/api/demo", demoRoutes);
 app.use("/api/leads", leadRoutes);
-app.use("/api/activities",activityRoutes);
+app.use("/api/activities", activityRoutes);
 
 app.get("/", (req, res) => {
   res.send("VAT Pro Backend Running 🚀");
@@ -86,7 +79,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== "production") {
     console.log("REQUEST:", req.method, req.originalUrl);
-  } 
+  }
   next();
 });
 
@@ -104,7 +97,7 @@ app.use("/api/imports", importRoutes);
 app.use("/api/audit", auditRoutes);
 
 app.use(
-  "/api/quickbooks", 
+  "/api/quickbooks",
   quickbooksRoutes
 );
 
