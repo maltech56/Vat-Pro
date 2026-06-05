@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 
+const API_BASE =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://api.maltechenterprises.com/api";
+
 export default function Contact() {
 
   const [submitted, setSubmitted] = useState(false);
@@ -21,14 +26,13 @@ export default function Contact() {
       const formData = new FormData(e.currentTarget);
 
       const response = await fetch(
-        "http://localhost:5000/api/demo/demo-request",
+        `${API_BASE}/demo/demo-request`,
         {
           method: "POST",
 
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             fullName: formData.get("fullName"),
             companyName: formData.get("companyName"),

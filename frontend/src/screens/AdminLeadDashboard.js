@@ -5,6 +5,11 @@ export default function AdminLeadDashboard() {
     const [search, setSearch] = useState("");
     const [selectedLead, setSelectedLead] = useState(null);
 
+    const API_BASE =
+        window.location.hostname === "localhost"
+            ? "http://localhost:5000/api"
+            : "https://api.maltechenterprises.com/api";
+
     const updateLeadField = async (
         id,
         field,
@@ -14,7 +19,7 @@ export default function AdminLeadDashboard() {
         try {
 
             await fetch(
-                `http://localhost:5000/api/leads/${id}/notes`,
+                `${API_BASE}/leads/${id}/notes`,
                 {
                     method: "PUT",
                     headers: {
@@ -50,14 +55,14 @@ export default function AdminLeadDashboard() {
         try {
 
             await fetch(
-                `http://localhost:5000/api/leads/${id}/status`,
+                `${API_BASE}/leads/${id}/notes`,
                 {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        status,
+                        [field]: value,
                     }),
                 }
             );
@@ -73,7 +78,7 @@ export default function AdminLeadDashboard() {
     };
 
     const loadLeads = () => {
-        fetch("http://localhost:5000/api/leads")
+        fetch(`${API_BASE}/leads`)
             .then((res) => res.json())
             .then((data) => setLeads(data))
             .catch(console.error);

@@ -1,5 +1,10 @@
 "use client";
 
+const API_BASE =
+    window.location.hostname === "localhost"
+        ? "http://localhost:5000/api"
+        : "https://api.maltechenterprises.com/api";
+
 import { useEffect, useState } from "react";
 
 export default function LeadsPage() {
@@ -7,7 +12,7 @@ export default function LeadsPage() {
     const [selectedLead, setSelectedLead] = useState<any>(null);
 
     useEffect(() => {
-        fetch("http://localhost:5000/api/leads")
+        fetch(`${API_BASE}/leads`)
             .then((res) => res.json())
             .then((data) => setLeads(data))
             .catch(console.error);
@@ -29,7 +34,7 @@ export default function LeadsPage() {
         try {
 
             const response = await fetch(
-                `http://localhost:5000/api/leads/${id}/status`,
+                `${API_BASE}/leads/${id}/status`,
                 {
                     method: "PUT",
                     headers: {
@@ -68,7 +73,7 @@ export default function LeadsPage() {
         try {
 
             await fetch(
-                `http://localhost:5000/api/leads/${id}/notes`,
+                `${API_BASE}/leads/${id}/notes`,
                 {
                     method: "PUT",
                     headers: {

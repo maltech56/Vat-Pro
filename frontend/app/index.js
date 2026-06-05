@@ -8,7 +8,10 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-const API_BASE = "https://api.maltechenterprises.com/api";
+const API_BASE =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://api.maltechenterprises.com/api";
 
 export default function Login() {
   const router = useRouter();
