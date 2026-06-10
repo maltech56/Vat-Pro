@@ -601,15 +601,9 @@ export default function Dashboard() {
               <Text style={styles.pageTitle}>dashboard</Text>
             </View>
             <ScrollView
-              style={{
-                flex: 1,
-                backgroundColor: "yellow",
-              }}
-              contentContainerStyle={{
-                padding: 28,
-                paddingBottom: 1000,
-              }}
-              showsVerticalScrollIndicator={true}
+              style={styles.contentArea}
+              contentContainerStyle={styles.contentContainer}
+              showsVerticalScrollIndicator={false}
             >
               <View style={styles.heroCard}>
                 <View style={styles.heroRow}>
@@ -1156,7 +1150,7 @@ const styles = StyleSheet.create({
   },
   main: {
     flex: 1,
-    backgroundColor: "#f3f6fb",
+    backgroundColor: "red",
   },
   topBar: {
     height: 82,
@@ -1180,13 +1174,13 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   heroCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "FFFFFF",
     borderRadius: 24,
     padding: 28,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#2E8F0",
     marginBottom: 24,
-    shadowColor: "#0F172A",
+    shadowColor: "#E2E8F0",
     shadowOpacity: 0.04,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
