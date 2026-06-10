@@ -595,17 +595,6 @@ export default function Dashboard() {
       />
       <View style={styles.main}>
 
-        <Text
-          style={{
-            backgroundColor: "red",
-            color: "white",
-            fontSize: 40,
-            padding: 10,
-          }}
-        >
-          TEST BUILD
-        </Text>
-
         {activePage === "Dashboard" && (
           <View>
             <View style={styles.topBar}>
@@ -622,11 +611,6 @@ export default function Dashboard() {
               }}
               showsVerticalScrollIndicator={true}
             >
-              <View style={{
-                height: 2000,
-                backgroundColor: "lime",
-                }}
-              />
               <View style={styles.heroCard}>
                 <View style={styles.heroRow}>
                   <View style={styles.heroLeft}>
