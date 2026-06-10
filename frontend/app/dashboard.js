@@ -622,6 +622,11 @@ export default function Dashboard() {
               }}
               showsVerticalScrollIndicator={true}
             >
+              <View style={{
+                height: 2000,
+                backgroundColor: "lime",
+                }}
+              />
               <View style={styles.heroCard}>
                 <View style={styles.heroRow}>
                   <View style={styles.heroLeft}>
