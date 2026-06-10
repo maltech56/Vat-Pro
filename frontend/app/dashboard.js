@@ -594,12 +594,22 @@ export default function Dashboard() {
         vatAlert={vatAlert}
       />
       <View style={styles.main}>
+
+        <Text
+          style={{
+            backgroundColor: "red",
+            color: "white",
+            fontSize: 40,
+            padding: 10,
+          }}
+        >
+          TEST BUILD
+        </Text>
+
         {activePage === "Dashboard" && (
           <View>
             <View style={styles.topBar}>
-              <Text style={styles.pageTitle}>
-                DASHBOARD TEST 999
-              </Text>
+              <Text style={styles.pageTitle}>dashboard</Text>
             </View>
             <ScrollView
               style={{
