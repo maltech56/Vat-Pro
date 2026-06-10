@@ -597,12 +597,20 @@ export default function Dashboard() {
         {activePage === "Dashboard" && (
           <View>
             <View style={styles.topBar}>
-              <Text style={styles.pageTitle}>dashboard</Text>
+              <Text style={styles.pageTitle}>
+                DASHBOARD TEST 999
+              </Text>
             </View>
             <ScrollView
-              style={styles.contentArea}
-              contentContainerStyle={styles.contentContainer}
-              showsVerticalScrollIndicator={false}
+              style={{
+                flex: 1,
+                backgroundColor: "yellow",
+              }}
+              contentContainerStyle={{
+                padding: 28,
+                paddingBottom: 1000,
+              }}
+              showsVerticalScrollIndicator={true}
             >
               <View style={styles.heroCard}>
                 <View style={styles.heroRow}>
