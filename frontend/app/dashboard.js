@@ -214,13 +214,14 @@ const getAuditStatus = (summary) => {
   };
 };
 
+const [overview, setOverview] = useState({
+  totalSales: 0,
+  outputVAT: 0,
+  inputVAT: 0,
+  netVATPayable: 0,
+});
+
 export default function Dashboard() {
-  const [overview, setOverview] = useState({
-    totalSales: 0,
-    outputVAT: 0,
-    inputVAT: 0,
-    netVATPayable: 0,
-  });
 
   const [auditSummary, setAuditSummary] = useState({
     unlinkedCount: 0,
@@ -449,14 +450,31 @@ export default function Dashboard() {
     }
   }, []);
 
-
-
   useEffect(() => {
+    console.log(
+      "EFFECT fetchCompanies",
+      {
+        companyReady,
+        selectedCompanyId: selectedCompany?.id,
+      }
+    );
+
     if (!companyReady) return;
+
     fetchCompanies();
   }, [companyReady, fetchCompanies]);
 
   useEffect(() => {
+
+    console.log(
+      "EFFECT fetchOverview",
+      {
+        companyReady,
+        selectedCompanyId: selectedCompany?.id,
+        refreshKey,
+      }
+    );
+    
     if (!companyReady) return;
 
     if (!selectedCompany?.id) {
@@ -575,6 +593,14 @@ export default function Dashboard() {
     setEndDate("");
 
   }, [selectedCompany?.id]);
+
+  console.log("DASHBOARD STATE", {
+    companyReady,
+    selectedCompanyId: selectedCompany?.id,
+    loading,
+    companiesLoading,
+    activePage,
+  });
 
   if (loading && !selectedCompany) {
     return (
@@ -1176,7 +1202,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   heroCard: {
-  backgroundColor: "#FFFFFF", 
+    backgroundColor: "#FFFFFF",
     padding: 28,
     marginBottom: 24,
   },
