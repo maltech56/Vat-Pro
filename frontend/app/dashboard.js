@@ -1150,7 +1150,7 @@ const styles = StyleSheet.create({
   },
   main: {
     flex: 1,
-    backgroundColor: "red",
+    backgroundColor: "#f3f6fb",
   },
   topBar: {
     height: 82,
@@ -1174,7 +1174,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   heroCard: {
-    backgroundColor: "#00FF00",
+  backgroundColor: "#FFFFFF", 
     padding: 28,
     marginBottom: 24,
   },
