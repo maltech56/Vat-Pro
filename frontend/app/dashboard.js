@@ -1175,16 +1175,8 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     backgroundColor: "#00FF00",
-    borderRadius: 24,
     padding: 28,
-    borderWidth: 1,
-    borderColor: "#2E8F0",
     marginBottom: 24,
-    shadowColor: "#E2E8F0",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   heroRow: {
     flexDirection: "row",
