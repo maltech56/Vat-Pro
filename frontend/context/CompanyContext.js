@@ -121,7 +121,7 @@ export const CompanyProvider = ({ children }) => {
     if (companyReady) {
       fetchCompanies();
     }
-  }, [companyReady, selectedCompany?.id]);
+  }, [companyReady]);
 
   const saveSelectedCompany = (company) => {
     setSelectedCompanyState(company);
