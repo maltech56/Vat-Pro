@@ -207,7 +207,7 @@ export default function ReportsScreen() {
         },
       });
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to load summary");
@@ -248,7 +248,7 @@ export default function ReportsScreen() {
         },
       });
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to load report rows");
