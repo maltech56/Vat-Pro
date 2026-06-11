@@ -596,7 +596,7 @@ export default function Dashboard() {
       <View style={styles.main}>
 
         {activePage === "Dashboard" && (
-          <View style={{ backgroundColor: "purple" }}>
+          <View style={{ flex: 1 }}>
             <View style={styles.topBar}>
               <Text style={styles.pageTitle}>dashboard</Text>
             </View>
