@@ -1044,13 +1044,14 @@ export default function Dashboard() {
                 </View>
               </View>
 
-              <View style={styles.sectionSpacing}>
+              {/*<View style={styles.sectionSpacing}>
                 <AddTransaction
                   key={selectedCompany?.id || "none"}
                   onSaved={handleTransactionSaved}
                 />
               </View>
-
+              */}
+              {/*
               <View style={styles.sectionSpacing}>
                 <ErrorBoundary>
                   <RecentTransactions
@@ -1061,6 +1062,7 @@ export default function Dashboard() {
                   />
                 </ErrorBoundary>
               </View>
+              */}
             </ScrollView>
           </View>
         )}
