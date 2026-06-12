@@ -33,6 +33,8 @@ export const CompanyProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+
+
     const fetchCompanies = async () => {
 
       console.count("CompanyContext fetchCompanies");
@@ -51,10 +53,13 @@ export const CompanyProvider = ({ children }) => {
           !!token
         );
 
+        console.log(
+          "API URL:",
+          process.env.EXPO_PUBLIC_API_URL
+        );
+
         const response = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL ||
-          "https://api.maltechenterprises.com/api"
-          }/companies/user`,
+          "http://localhost:5000/api/companies/user",
           {
             headers: {
               Authorization: `Bearer ${token}`,

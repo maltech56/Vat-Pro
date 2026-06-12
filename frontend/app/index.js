@@ -10,7 +10,7 @@ import { useRouter } from "expo-router";
 
 const API_BASE =
   typeof window !== "undefined" &&
-  window.location.hostname === "localhost"
+    window.location.hostname === "localhost"
     ? "http://localhost:5000/api"
     : "https://api.maltechenterprises.com/api";
 
@@ -23,21 +23,24 @@ export default function Login() {
     try {
       console.log("Trying login...");
 
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
+          email,
           password,
         }),
       });
 
-      console.log("HTTP status:", res.status);
+      console.log("HTTP STATUS:", response.status);
 
-      const data = await res.json();
+      const data = await response.json();
+
       console.log("LOGIN RESPONSE:", data);
 
-      if (!res.ok) {
+      if (!response.ok) {
         alert(data.error || data.message || "Invalid email or password");
         return;
       }

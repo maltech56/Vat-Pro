@@ -466,11 +466,15 @@ export default function Dashboard() {
         inputVAT: 0,
         netVATPayable: 0,
       });
+
       setAuditSummary({
         unlinkedCount: 0,
         linkedCount: 0,
         totalDocuments: 0,
       });
+
+      setLoading(false);   // <-- ADD THIS
+
       return;
     }
 
@@ -576,11 +580,21 @@ export default function Dashboard() {
 
   }, [selectedCompany?.id]);
 
-  if (loading && !selectedCompany) {
+  console.log("Dashboard user:", user);
+
+  if (loading) {
     return (
       <View style={styles.loadingPage}>
         <ActivityIndicator size="large" />
         <Text style={styles.loadingText}>Loading dashboard...</Text>
+      </View>
+    );
+  }
+
+  if (!selectedCompany) {
+    return (
+      <View style={styles.loadingPage}>
+        <Text>No company selected.</Text>
       </View>
     );
   }
@@ -617,6 +631,8 @@ export default function Dashboard() {
                     <Text style={[styles.heroEyebrow, { color: brandColor }]}>
                       VAT PRO DASHBOARD
                     </Text>
+
+
                     <Text style={styles.heroTitle}>
                       {companySettings?.homeScreenTitle ||
                         `Welcome back, ${user?.name || "User"}`}
@@ -1176,7 +1192,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   heroCard: {
-  backgroundColor: "#FFFFFF", 
+    backgroundColor: "#FFFFFF",
     padding: 28,
     marginBottom: 24,
   },

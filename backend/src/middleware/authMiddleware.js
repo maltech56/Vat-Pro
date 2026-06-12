@@ -15,6 +15,12 @@ module.exports = function authMiddleware(req, res, next) {
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
+  console.error("JWT VERIFY ERROR:");
+  console.error("Name:", error.name);
+  console.error("Message:", error.message);
+
+  return res.status(401).json({
+    error: error.message,
+  });
+}
 };

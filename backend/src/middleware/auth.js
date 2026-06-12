@@ -30,22 +30,12 @@ module.exports = (req, res, next) => {
     // 5. Continue
     next();
     } catch (error) {
-    console.error("Auth error:", error);
+  console.error("JWT VERIFY ERROR:");
+  console.error("Name:", error.name);
+  console.error("Message:", error.message);
 
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({
-        error: "Session expired. Please log in again.",
-      });
-    }
-
-    if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({
-        error: "Invalid token. Please log in again.",
-      });
-    }
-
-    return res.status(401).json({
-      error: "Authentication failed",
-    });
-  }
+  return res.status(401).json({
+    error: error.message,
+  });
+}
 };
