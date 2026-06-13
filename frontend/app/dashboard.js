@@ -265,13 +265,20 @@ export default function Dashboard() {
   const { selectedCompany, setSelectedCompany, companyReady } = useCompany();
 
   const [vatPeriodType, setVatPeriodType] = useState("monthly");
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedQuarter, setSelectedQuarter] = useState("Q1");
-  const [selectedYear, setSelectedYear] = useState(
-    String(new Date().getFullYear())
-  );
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+
+  const [periodFilters, setPeriodFilters] = useState({
+    month: "",
+    quarter: "Q1",
+    year: String(new Date().getFullYear()),
+    startDate: "",
+    endDate: "",
+  });
+
+  const selectedMonth = periodFilters.month;
+  const selectedQuarter = periodFilters.quarter;
+  const selectedYear = periodFilters.year;
+  const startDate = periodFilters.startDate;
+  const endDate = periodFilters.endDate;
 
   const companyName =
     selectedCompany?.name ||
@@ -384,7 +391,7 @@ export default function Dashboard() {
     } finally {
       setCompaniesLoading(false);
     }
-  }, [selectedCompany?.id, setSelectedCompany, user?.id]);
+  }, [setSelectedCompany, user?.id]);
 
 
   const fetchOverview = useCallback(async () => {
@@ -572,11 +579,13 @@ export default function Dashboard() {
     setError("");
 
     // Optional but clean UX reset
-    setSelectedMonth("");
-    setSelectedQuarter("Q1");
-    setSelectedYear(String(new Date().getFullYear()));
-    setStartDate("");
-    setEndDate("");
+    setPeriodFilters({
+      month: "",
+      quarter: "Q1",
+      year: String(new Date().getFullYear()),
+      startDate: "",
+      endDate: "",
+    });
 
   }, [selectedCompany?.id]);
 
@@ -794,7 +803,12 @@ export default function Dashboard() {
                     style={styles.input}
                     placeholder="YYYY-MM"
                     value={selectedMonth}
-                    onChangeText={setSelectedMonth}
+                    onChangeText={(value) =>
+                      setPeriodFilters((prev) => ({
+                        ...prev,
+                        month: value,
+                      }))
+                    }
                   />
                 )}
 
@@ -804,13 +818,23 @@ export default function Dashboard() {
                       style={[styles.input, styles.periodInput]}
                       placeholder="Year"
                       value={String(selectedYear)}
-                      onChangeText={setSelectedYear}
+                      onChangeText={(value) =>
+                        setPeriodFilters((prev) => ({
+                          ...prev,
+                          year: value,
+                        }))
+                      }
                     />
                     <TextInput
                       style={[styles.input, styles.periodInput]}
                       placeholder="Q1 / Q2 / Q3 / Q4"
                       value={selectedQuarter}
-                      onChangeText={setSelectedQuarter}
+                      onChangeText={(value) =>
+                        setPeriodFilters((prev) => ({
+                          ...prev,
+                          quarter: value,
+                        }))
+                      }
                     />
                   </View>
                 )}
@@ -821,13 +845,23 @@ export default function Dashboard() {
                       style={[styles.input, styles.periodInput]}
                       placeholder="Start YYYY-MM-DD"
                       value={startDate}
-                      onChangeText={setStartDate}
+                      onChangeText={(value) =>
+                        setPeriodFilters((prev) => ({
+                          ...prev,
+                          startDate: value,
+                        }))
+                      }
                     />
                     <TextInput
                       style={[styles.input, styles.periodInput]}
                       placeholder="End YYYY-MM-DD"
                       value={endDate}
-                      onChangeText={setEndDate}
+                      onChangeText={(value) =>
+                        setPeriodFilters((prev) => ({
+                          ...prev,
+                          endDate: value,
+                        }))
+                      }
                     />
                   </View>
                 )}
