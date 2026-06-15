@@ -58,8 +58,12 @@ export const CompanyProvider = ({ children }) => {
           process.env.EXPO_PUBLIC_API_URL
         );
 
+        const API_BASE =
+          process.env.EXPO_PUBLIC_API_URL ||
+          "https://api.maltechenterprises.com/api";
+
         const response = await fetch(
-          "http://localhost:5000/api/companies/user",
+          `${API_BASE}/companies/user`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -111,7 +115,9 @@ export const CompanyProvider = ({ children }) => {
           return;
         }
 
-        const exists = data.find(c => c.id === selectedCompany.id);
+        const exists = data.find(
+          (c) => c.id === selectedCompany?.id
+        );
 
         if (!exists) {
           saveSelectedCompany(data[0]);
