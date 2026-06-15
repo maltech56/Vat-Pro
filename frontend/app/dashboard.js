@@ -274,6 +274,14 @@ export default function Dashboard() {
     endDate: "",
   });
 
+  console.log("DASHBOARD RENDER", {
+    companyReady,
+    selectedCompanyId: selectedCompany?.id,
+    loading,
+    companiesLoading,
+    activePage,
+  });
+
   const selectedMonth = periodFilters.month;
   const selectedQuarter = periodFilters.quarter;
   const selectedYear = periodFilters.year;
@@ -456,45 +464,52 @@ export default function Dashboard() {
     }
   }, []);
 
-
-
   useEffect(() => {
-    if (!companyReady) return;
-    fetchCompanies();
-  }, [companyReady, fetchCompanies]);
-
-  useEffect(() => {
-    if (!companyReady) return;
-
-    if (!selectedCompany?.id) {
-      setOverview({
-        totalSales: 0,
-        outputVAT: 0,
-        inputVAT: 0,
-        netVATPayable: 0,
-      });
-
-      setAuditSummary({
-        unlinkedCount: 0,
-        linkedCount: 0,
-        totalDocuments: 0,
-      });
-
-      setLoading(false);   // <-- ADD THIS
-
-      return;
-    }
-
-    fetchOverview();
-    fetchAuditSummary(selectedCompany.id);
-  }, [
+  console.log("EFFECT fetchOverview", {
     companyReady,
-    selectedCompany?.id,
+    selectedCompanyId: selectedCompany?.id,
     refreshKey,
-    fetchOverview,
-    fetchAuditSummary,
-  ]);
+  });
 
+  if (!companyReady) return;
+
+  if (!selectedCompany?.id) {
+    console.log("fetchOverview skipped - no selected company");
+
+    setOverview({
+      totalSales: 0,
+      outputVAT: 0,
+      inputVAT: 0,
+      netVATPayable: 0,
+    });
+
+    setAuditSummary({
+      unlinkedCount: 0,
+      linkedCount: 0,
+      totalDocuments: 0,
+    });
+
+    setLoading(false);
+
+    return;
+  }
+
+  console.log("Calling fetchOverview()");
+  fetchOverview();
+
+  console.log(
+    "Calling fetchAuditSummary()",
+    selectedCompany.id
+  );
+  fetchAuditSummary(selectedCompany.id);
+
+}, [
+  companyReady,
+  selectedCompany?.id,
+  refreshKey,
+  fetchOverview,
+  fetchAuditSummary,
+]);
   useEffect(() => {
     if (!companyReady) return;
     if (!selectedCompany?.id) return;
