@@ -533,30 +533,41 @@ export default function Dashboard() {
 
 
   useEffect(() => {
-  const loadCompanySettings = async () => {
-    try {
+    const loadCompanySettings = async () => {
       if (!companyReady) return;
 
       if (!selectedCompany?.id) {
         setCompanySettings(null);
+        setVatAlert(null);
         return;
       }
 
-      const response = await apiFetch(
-        `/settings/company/${selectedCompany.id}`
-      );
+      try {
+        const response = await apiFetch(
+          `/settings/company/${selectedCompany.id}`
+        );
 
-      setCompanySettings(response);
+        if (!response) return;
 
-      const dueDay = response?.vatDueDay || 28;
-      setVatAlert(buildVatAlert(dueDay));
-    } catch (error) {
-      console.error("Error loading company settings:", error);
-    }
-  };
+        const data = response;
 
-  loadCompanySettings();
-}, [selectedCompany?.id, companyReady]);
+        const settings = data.settings || null;
+
+        console.log("COMPANY SETTINGS:", settings);
+
+        setCompanySettings(settings);
+
+        const dueDay = Number(settings?.vatDueDay ?? VAT_DUE_DAY);
+        setVatAlert(buildVatAlert(dueDay));
+      } catch (error) {
+        console.error("LOAD COMPANY SETTINGS ERROR:", error);
+        setCompanySettings(null);
+        setVatAlert(null);
+      }
+    };
+
+    loadCompanySettings();
+  }, [companyReady, selectedCompany?.id]);
 
   const handleTransactionSaved = () => {
     setRefreshKey((prev) => prev + 1);
