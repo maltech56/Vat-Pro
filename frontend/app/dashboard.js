@@ -608,10 +608,11 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-  <View style={{ padding: 40 }}>
-    <Text>Dashboard Isolation Test</Text>
-  </View>
-);
+      <View style={styles.loadingPage}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>Loading dashboard...</Text>
+      </View>
+    );
   }
 
   if (!selectedCompany) {
