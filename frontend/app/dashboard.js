@@ -28,7 +28,7 @@ import AddTransaction from "./add-transaction";
 import RecentTransactions from "../components/RecentTransactions";
 
 import { getUser } from "../src/utils/session";
-// import { useCompany } from "../context/CompanyContext";
+import { useCompany } from "../context/CompanyContext";
 import { formatCurrency } from "../src/utils/formatters";
 import { apiFetch } from "../src/utils/apiFetch";
 
@@ -262,10 +262,7 @@ export default function Dashboard() {
   const user = getUser();
   const [companies, setCompanies] = useState([]);
   const [companySettings, setCompanySettings] = useState(null);
-  // TEMPORARY REACT 418 TEST
-  const selectedCompany = { id: 11, company_name: "Test Company" };
-  const setSelectedCompany = () => { };
-  const companyReady = true;
+  const { selectedCompany, setSelectedCompany, companyReady } = useCompany();
 
   const [vatPeriodType, setVatPeriodType] = useState("monthly");
 
@@ -536,37 +533,30 @@ export default function Dashboard() {
 
 
   useEffect(() => {
-    console.log("SETTINGS EFFECT FIRED", {
-      companyReady,
-      companyId: selectedCompany?.id,
-    });
+  const loadCompanySettings = async () => {
+    try {
+      if (!companyReady) return;
 
-    const loadCompanySettings = async () => {
-      try {
-        if (!companyReady) return;
-
-        if (!selectedCompany?.id) {
-          setCompanySettings(null);
-          return;
-        }
-
-        const response = await apiFetch(
-          `/settings/company/${selectedCompany.id}`
-        );
-
-        console.log("COMPANY SETTINGS:", response);
-
-        setCompanySettings(response);
-
-        const dueDay = response?.vatDueDay || 28;
-        setVatAlert(buildVatAlert(dueDay));
-      } catch (error) {
-        console.error("Error loading company settings:", error);
+      if (!selectedCompany?.id) {
+        setCompanySettings(null);
+        return;
       }
-    };
 
-    loadCompanySettings();
-  }, [selectedCompany?.id, companyReady]);
+      const response = await apiFetch(
+        `/settings/company/${selectedCompany.id}`
+      );
+
+      setCompanySettings(response);
+
+      const dueDay = response?.vatDueDay || 28;
+      setVatAlert(buildVatAlert(dueDay));
+    } catch (error) {
+      console.error("Error loading company settings:", error);
+    }
+  };
+
+  loadCompanySettings();
+}, [selectedCompany?.id, companyReady]);
 
   const handleTransactionSaved = () => {
     setRefreshKey((prev) => prev + 1);
