@@ -465,51 +465,51 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    console.log("EFFECT fetchOverview", {
-      companyReady,
-      selectedCompanyId: selectedCompany?.id,
-      refreshKey,
+  console.log("EFFECT fetchOverview", {
+    companyReady,
+    selectedCompanyId: selectedCompany?.id,
+    refreshKey,
+  });
+
+  if (!companyReady) return;
+
+  if (!selectedCompany?.id) {
+    console.log("fetchOverview skipped - no selected company");
+
+    setOverview({
+      totalSales: 0,
+      outputVAT: 0,
+      inputVAT: 0,
+      netVATPayable: 0,
     });
 
-    if (!companyReady) return;
+    setAuditSummary({
+      unlinkedCount: 0,
+      linkedCount: 0,
+      totalDocuments: 0,
+    });
 
-    if (!selectedCompany?.id) {
-      console.log("fetchOverview skipped - no selected company");
+    setLoading(false);
 
-      setOverview({
-        totalSales: 0,
-        outputVAT: 0,
-        inputVAT: 0,
-        netVATPayable: 0,
-      });
+    return;
+  }
 
-      setAuditSummary({
-        unlinkedCount: 0,
-        linkedCount: 0,
-        totalDocuments: 0,
-      });
+  console.log("Calling fetchOverview()");
+  fetchOverview();
 
-      setLoading(false);
+  console.log(
+    "Calling fetchAuditSummary()",
+    selectedCompany.id
+  );
+  fetchAuditSummary(selectedCompany.id);
 
-      return;
-    }
-
-    console.log("Calling fetchOverview()");
-    fetchOverview();
-
-    console.log(
-      "Calling fetchAuditSummary()",
-      selectedCompany.id
-    );
-    fetchAuditSummary(selectedCompany.id);
-
-  }, [
-    companyReady,
-    selectedCompany?.id,
-    refreshKey,
-    fetchOverview,
-    fetchAuditSummary,
-  ]);
+}, [
+  companyReady,
+  selectedCompany?.id,
+  refreshKey,
+  fetchOverview,
+  fetchAuditSummary,
+]);
   useEffect(() => {
     if (!companyReady) return;
     if (!selectedCompany?.id) return;
