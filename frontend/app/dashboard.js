@@ -237,6 +237,8 @@ export default function Dashboard() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [pageOptions, setPageOptions] = useState({});
 
+  console.count("DASHBOARD COMPONENT RENDER");
+
   const handleSelectPage = (page, options = {}) => {
     setActivePage(page);
     setPageOptions(options);
@@ -364,6 +366,8 @@ export default function Dashboard() {
       const data = response;
 
       const companyList = Array.isArray(data) ? data : [];
+      
+      console.count("setCompanies called");
       setCompanies(companyList);
 
       if (companyList.length === 0) {
@@ -421,6 +425,8 @@ export default function Dashboard() {
 
       const data = response;
 
+      console.count("setOverview called");
+
       setOverview({
         totalSales: Number(data.totalSales || 0),
         outputVAT: Number(data.outputVAT || 0),
@@ -445,6 +451,7 @@ export default function Dashboard() {
 
       const data = response;
 
+      console.count("setAuditSummary called");
       setAuditSummary({
         unlinkedCount: Number(data.unlinkedCount || 0),
         linkedCount: Number(data.linkedCount || 0),
@@ -452,6 +459,7 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error("fetchAuditSummary error:", error);
+      console.count("setAuditSummary called");
       setAuditSummary({
         unlinkedCount: 0,
         linkedCount: 0,
@@ -474,6 +482,7 @@ export default function Dashboard() {
     if (!companyReady) return;
 
     if (!selectedCompany?.id) {
+      console.count("setOverview called");
       setOverview({
         totalSales: 0,
         outputVAT: 0,
@@ -481,6 +490,7 @@ export default function Dashboard() {
         netVATPayable: 0,
       });
 
+      console.count("setAuditSummary called");
       setAuditSummary({
         unlinkedCount: 0,
         linkedCount: 0,
@@ -545,6 +555,7 @@ export default function Dashboard() {
 
         console.log("COMPANY SETTINGS:", settings);
 
+        console.count("setCompanySettings called");
         setCompanySettings(settings);
 
         const dueDay = Number(settings?.vatDueDay ?? VAT_DUE_DAY);
@@ -563,14 +574,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedCompany?.id) return;
-
+    console.count("setOverview called");
     setOverview({
       totalSales: 0,
       outputVAT: 0,
       inputVAT: 0,
       netVATPayable: 0,
     });
-
+    console.count("setAuditSummary called");
     setAuditSummary({
       unlinkedCount: 0,
       linkedCount: 0,
@@ -742,12 +753,15 @@ export default function Dashboard() {
 
                             setLoading(true);
                             setSelectedCompany(company);
+
+                            console.count("setOverview called");
                             setOverview({
                               totalSales: 0,
                               outputVAT: 0,
                               inputVAT: 0,
                               netVATPayable: 0,
                             });
+                            console.count("setAuditSummary called");
                             setAuditSummary({
                               unlinkedCount: 0,
                               linkedCount: 0,
