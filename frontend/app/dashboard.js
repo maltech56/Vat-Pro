@@ -622,15 +622,10 @@ export default function Dashboard() {
 
   return (
     <View style={styles.page}>
-      <Sidebar
-        activeItem={activePage}
-        onSelectItem={handleSelectPage}
-        auditSummary={auditSummary}
-        vatAlert={vatAlert}
-      />
+      {/* Sidebar disabled for test */}
       <View style={styles.main}>
-
         {activePage === "Dashboard" && (
+          
           <View style={{ flex: 1 }}>
             <View style={styles.topBar}>
               <Text style={styles.pageTitle}>dashboard</Text>
