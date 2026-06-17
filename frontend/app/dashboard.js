@@ -589,7 +589,7 @@ export default function Dashboard() {
 
   }, [selectedCompany?.id]);
 
-  console.log("Dashboard user:", user);
+  // console.log("Dashboard user:", user);
 
   if (loading) {
     return (
