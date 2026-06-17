@@ -259,7 +259,7 @@ export default function Dashboard() {
   }, []);
 
 
-  const user = getUser();
+  const [user] = useState(() => getUser());
   const [companies, setCompanies] = useState([]);
   const [companySettings, setCompanySettings] = useState(null);
   const { selectedCompany, setSelectedCompany, companyReady } = useCompany();
@@ -344,10 +344,14 @@ export default function Dashboard() {
     endDate,
   ]);
 
+  console.count("DASHBOARD fetchCompanies callback created");
+
   const fetchCompanies = useCallback(async () => {
     try {
       setCompaniesLoading(true);
       setCompanyError("");
+
+      console.count("DASHBOARD fetchCompanies callback executed");
 
       if (!user?.id) {
         setCompanyError("User information is missing. Please log in again.");
@@ -456,11 +460,14 @@ export default function Dashboard() {
     }
   }, []);
 
-
-
   useEffect(() => {
+
+    console.count("DASHBOARD fetchCompanies effect");
+
     if (!companyReady) return;
+
     fetchCompanies();
+
   }, [companyReady, fetchCompanies]);
 
   useEffect(() => {
