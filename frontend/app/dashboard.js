@@ -240,7 +240,7 @@ export default function Dashboard() {
   console.count("DASHBOARD COMPONENT RENDER");
 
   console.log("AUDIT SUMMARY STATE:", auditSummary);
-  
+
   const handleSelectPage = (page, options = {}) => {
     setActivePage(page);
     setPageOptions(options);
@@ -620,7 +620,7 @@ setAuditSummary((current) => {
     <View style={styles.page}>
       {/* Sidebar disabled for test */}
       <View style={styles.main}>
-        {activePage === "Dashboard" && (
+        {false && (
 
           <View style={{ flex: 1 }}>
             <View style={styles.topBar}>
