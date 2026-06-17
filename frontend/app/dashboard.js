@@ -239,6 +239,8 @@ export default function Dashboard() {
 
   console.count("DASHBOARD COMPONENT RENDER");
 
+  console.log("AUDIT SUMMARY STATE:", auditSummary);
+  
   const handleSelectPage = (page, options = {}) => {
     setActivePage(page);
     setPageOptions(options);
@@ -441,32 +443,16 @@ export default function Dashboard() {
     }
   }, [getDateRange, selectedCompany?.id]);
 
-  const fetchAuditSummary = useCallback(async (companyId) => {
-    try {
-      const response = await apiFetch(
-        `/documents/company/${companyId}/unlinked-summary`
-      );
+  setAuditSummary((current) => {
+    console.log("PREVIOUS AUDIT SUMMARY:", current);
+    console.log("NEW AUDIT SUMMARY:", data);
 
-      if (!response) return;
-
-      const data = response;
-
-      console.count("setAuditSummary called");
-      setAuditSummary({
-        unlinkedCount: Number(data.unlinkedCount || 0),
-        linkedCount: Number(data.linkedCount || 0),
-        totalDocuments: Number(data.totalDocuments || 0),
-      });
-    } catch (error) {
-      console.error("fetchAuditSummary error:", error);
-      console.count("setAuditSummary called");
-      setAuditSummary({
-        unlinkedCount: 0,
-        linkedCount: 0,
-        totalDocuments: 0,
-      });
-    }
-  }, []);
+    return {
+      unlinkedCount: data.unlinkedCount || 0,
+      linkedCount: data.linkedCount || 0,
+      totalDocuments: data.totalDocuments || 0,
+    };
+  });
 
   useEffect(() => {
 
@@ -517,6 +503,7 @@ export default function Dashboard() {
     if (!selectedCompany?.id) return;
 
     const interval = setInterval(() => {
+      console.count("AUDIT POLL FIRED");
       fetchAuditSummary(selectedCompany.id);
 
       setVatAlert((currentAlert) => {
@@ -581,12 +568,21 @@ export default function Dashboard() {
       inputVAT: 0,
       netVATPayable: 0,
     });
-    console.count("setAuditSummary called");
-    setAuditSummary({
-      unlinkedCount: 0,
-      linkedCount: 0,
-      totalDocuments: 0,
-    });
+   console.log("AUDIT SUMMARY RESPONSE:", data);
+
+setAuditSummary((current) => {
+  console.log("PREVIOUS AUDIT SUMMARY:", current);
+
+  const next = {
+    unlinkedCount: Number(data.unlinkedCount || 0),
+    linkedCount: Number(data.linkedCount || 0),
+    totalDocuments: Number(data.totalDocuments || 0),
+  };
+
+  console.log("NEXT AUDIT SUMMARY:", next);
+
+  return next;
+});
 
     setError("");
 
@@ -625,7 +621,7 @@ export default function Dashboard() {
       {/* Sidebar disabled for test */}
       <View style={styles.main}>
         {activePage === "Dashboard" && (
-          
+
           <View style={{ flex: 1 }}>
             <View style={styles.topBar}>
               <Text style={styles.pageTitle}>dashboard</Text>
