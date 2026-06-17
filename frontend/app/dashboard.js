@@ -366,7 +366,7 @@ export default function Dashboard() {
       const data = response;
 
       const companyList = Array.isArray(data) ? data : [];
-      
+
       console.count("setCompanies called");
       setCompanies(companyList);
 
@@ -603,6 +603,7 @@ export default function Dashboard() {
   // console.log("Dashboard user:", user);
 
   if (loading) {
+    console.log("ACTIVE PAGE:", activePage);
     return (
       <View style={styles.loadingPage}>
         <ActivityIndicator size="large" />
