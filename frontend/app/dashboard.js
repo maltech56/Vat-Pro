@@ -522,8 +522,6 @@ export default function Dashboard() {
       if (!companyReady) return;
 
       if (!selectedCompany?.id) {
-        setCompanySettings(null);
-        setVatAlert(null);
         return;
       }
 
@@ -546,8 +544,6 @@ export default function Dashboard() {
         setVatAlert(buildVatAlert(dueDay));
       } catch (error) {
         console.error("LOAD COMPANY SETTINGS ERROR:", error);
-        setCompanySettings(null);
-        setVatAlert(null);
       }
     };
 
@@ -559,7 +555,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    // 🔥 Reset ALL company-dependent state on company change
+    if (!selectedCompany?.id) return;
 
     setOverview({
       totalSales: 0,
@@ -574,11 +570,8 @@ export default function Dashboard() {
       totalDocuments: 0,
     });
 
-    setCompanySettings(null);
-    setVatAlert(null);
     setError("");
 
-    // Optional but clean UX reset
     setPeriodFilters({
       month: "",
       quarter: "Q1",
