@@ -345,7 +345,7 @@ export default function Dashboard() {
   ]);
 
 
-
+  
   const fetchCompanies = useCallback(async () => {
     try {
       setCompaniesLoading(true);
@@ -473,7 +473,7 @@ export default function Dashboard() {
     if (!companyReady) return;
 
     if (!selectedCompany?.id) {
-
+    
       setOverview({
         totalSales: 0,
         outputVAT: 0,
@@ -563,7 +563,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedCompany?.id) return;
-    setOverview({
+      setOverview({
       totalSales: 0,
       outputVAT: 0,
       inputVAT: 0,
@@ -584,7 +584,7 @@ export default function Dashboard() {
 
   // console.log("Dashboard user:", user);
 
-
+  
   if (loading) {
     return (
       <View style={styles.loadingPage}>
@@ -617,7 +617,7 @@ export default function Dashboard() {
               contentContainerStyle={styles.contentContainer}
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.heroCard}>
+               <View style={styles.heroCard}>
                 <View style={styles.heroRow}>
                   <View style={styles.heroLeft}>
                     {!!companySettings?.logoUrl && (
@@ -629,8 +629,6 @@ export default function Dashboard() {
                     <Text style={[styles.heroEyebrow, { color: brandColor }]}>
                       VAT PRO DASHBOARD
                     </Text>
-
-
                     <Text style={styles.heroTitle}>
                       {companySettings?.homeScreenTitle ||
                         `Welcome back, ${user?.name || "User"}`}
@@ -718,9 +716,45 @@ export default function Dashboard() {
                           Loading companies...
                         </Text>
                       ) : (
-                        <View>
-                          <Text>Company Selector Temporarily Disabled</Text>
-                        </View>
+                        <Picker
+                          selectedValue={
+                            selectedCompany?.id ? String(selectedCompany.id) : ""
+                          }
+                          onValueChange={(value) => {
+                            const company = companies.find(
+                              (item) => String(item.id) === String(value)
+                            );
+
+                            if (!company) return;
+
+                            setLoading(true);
+                            setSelectedCompany(company);
+
+                            setOverview({
+                              totalSales: 0,
+                              outputVAT: 0,
+                              inputVAT: 0,
+                              netVATPayable: 0,
+                            });
+                            
+                            setAuditSummary({
+                              unlinkedCount: 0,
+                              linkedCount: 0,
+                              totalDocuments: 0,
+                            });
+                            setError("");
+                            setRefreshKey((prev) => prev + 1);
+                          }}
+                          style={styles.picker}
+                        >
+                          {companies.map((company) => (
+                            <Picker.Item
+                              key={company.id}
+                              label={company.name || company.company_name}
+                              value={String(company.id)}
+                            />
+                          ))}
+                        </Picker>
                       )}
                     </View>
                   </View>
