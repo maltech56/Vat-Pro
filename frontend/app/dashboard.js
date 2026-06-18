@@ -443,16 +443,41 @@ export default function Dashboard() {
     }
   }, [getDateRange, selectedCompany?.id]);
 
-  setAuditSummary((current) => {
-    console.log("PREVIOUS AUDIT SUMMARY:", current);
-    console.log("NEW AUDIT SUMMARY:", data);
+  const fetchAuditSummary = useCallback(async (companyId) => {
+  try {
+    const response = await apiFetch(
+      `/documents/company/${companyId}/unlinked-summary`
+    );
 
-    return {
-      unlinkedCount: data.unlinkedCount || 0,
-      linkedCount: data.linkedCount || 0,
-      totalDocuments: data.totalDocuments || 0,
-    };
-  });
+    if (!response) return;
+
+    const data = response;
+
+    console.log("AUDIT SUMMARY RESPONSE:", data);
+
+    setAuditSummary((current) => {
+      console.log("PREVIOUS AUDIT SUMMARY:", current);
+
+      const next = {
+        unlinkedCount: Number(data.unlinkedCount || 0),
+        linkedCount: Number(data.linkedCount || 0),
+        totalDocuments: Number(data.totalDocuments || 0),
+      };
+
+      console.log("NEXT AUDIT SUMMARY:", next);
+
+      return next;
+    });
+  } catch (error) {
+    console.error("fetchAuditSummary error:", error);
+
+    setAuditSummary({
+      unlinkedCount: 0,
+      linkedCount: 0,
+      totalDocuments: 0,
+    });
+  }
+}, []);
 
   useEffect(() => {
 
