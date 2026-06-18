@@ -345,7 +345,7 @@ export default function Dashboard() {
   ]);
 
 
-  
+
   const fetchCompanies = useCallback(async () => {
     try {
       setCompaniesLoading(true);
@@ -473,7 +473,7 @@ export default function Dashboard() {
     if (!companyReady) return;
 
     if (!selectedCompany?.id) {
-    
+
       setOverview({
         totalSales: 0,
         outputVAT: 0,
@@ -563,7 +563,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedCompany?.id) return;
-      setOverview({
+    setOverview({
       totalSales: 0,
       outputVAT: 0,
       inputVAT: 0,
@@ -584,7 +584,7 @@ export default function Dashboard() {
 
   // console.log("Dashboard user:", user);
 
-  
+
   if (loading) {
     return (
       <View style={styles.loadingPage}>
@@ -617,338 +617,342 @@ export default function Dashboard() {
               contentContainerStyle={styles.contentContainer}
               showsVerticalScrollIndicator={false}
             >
-               <View style={styles.heroCard}>
-                <View style={styles.heroRow}>
-                  <View style={styles.heroLeft}>
-                    {!!companySettings?.logoUrl && (
-                      <Image
-                        source={{ uri: companySettings.logoUrl }}
-                        style={{ width: 60, height: 60, marginBottom: 10 }}
-                      />
-                    )}
-                    <Text style={[styles.heroEyebrow, { color: brandColor }]}>
-                      VAT PRO DASHBOARD
-                    </Text>
-                    <Text style={styles.heroTitle}>
-                      {companySettings?.homeScreenTitle ||
-                        `Welcome back, ${user?.name || "User"}`}
-                    </Text>
-                    <Text style={styles.heroSubtitle}>
-                      Manage VAT activity, filings, and transactions across your
-                      companies.
-                    </Text>
-                    <View
-                      style={[
-                        styles.activeCompanyBadge,
-                        {
-                          backgroundColor: `${brandColor}12`,
-                          borderColor: `${brandColor}44`,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.activeCompanyBadgeLabel, { color: brandColor }]}>
-                        Active Company
+              {false && (
+                <View style={styles.heroCard}>
+                  <View style={styles.heroRow}>
+                    <View style={styles.heroLeft}>
+                      {!!companySettings?.logoUrl && (
+                        <Image
+                          source={{ uri: companySettings.logoUrl }}
+                          style={{ width: 60, height: 60, marginBottom: 10 }}
+                        />
+                      )}
+                      <Text style={[styles.heroEyebrow, { color: brandColor }]}>
+                        VAT PRO DASHBOARD
                       </Text>
-                      <Text style={styles.activeCompanyBadgeText}>
-                        {companyName}
+                      <Text style={styles.heroTitle}>
+                        {companySettings?.homeScreenTitle ||
+                          `Welcome back, ${user?.name || "User"}`}
                       </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.heroRight}>
-                    <View style={styles.alertPill}>
-                      <View style={styles.alertDot} />
-                      <Text style={styles.alertText}>Alerts</Text>
-                    </View>
-
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>DM</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {vatAlert !== null && vatAlert !== undefined && typeof vatAlert === "object" && (
-                  <View
-                    style={[
-                      styles.vatAlertCard,
-                      vatAlert.status === "due_soon" && styles.vatAlertDueSoon,
-                      vatAlert.status === "overdue" && styles.vatAlertOverdue,
-                    ]}
-                  >
-                    <View style={styles.vatAlertHeader}>
-                      <Text style={styles.vatAlertTitle}>{vatAlert.title}</Text>
-
+                      <Text style={styles.heroSubtitle}>
+                        Manage VAT activity, filings, and transactions across your
+                        companies.
+                      </Text>
                       <View
                         style={[
-                          styles.vatAlertBadge,
-                          vatAlert.status === "due_soon" &&
-                          styles.vatAlertBadgeDueSoon,
-                          vatAlert.status === "overdue" &&
-                          styles.vatAlertBadgeOverdue,
+                          styles.activeCompanyBadge,
+                          {
+                            backgroundColor: `${brandColor}12`,
+                            borderColor: `${brandColor}44`,
+                          },
                         ]}
                       >
-                        <Text style={styles.vatAlertBadgeText}>
-                          {vatAlert.status === "overdue"
-                            ? "Overdue"
-                            : vatAlert.status === "due_soon"
-                              ? "Due Soon"
-                              : "Upcoming"}
+                        <Text style={[styles.activeCompanyBadgeLabel, { color: brandColor }]}>
+                          Active Company
+                        </Text>
+                        <Text style={styles.activeCompanyBadgeText}>
+                          {companyName}
                         </Text>
                       </View>
                     </View>
 
-                    <Text style={styles.vatAlertDate}>
-                      Due date: {vatAlert.dueDate}
-                    </Text>
-                    <Text style={styles.vatAlertMessage}>
-                      {vatAlert.message}
-                    </Text>
+                    <View style={styles.heroRight}>
+                      <View style={styles.alertPill}>
+                        <View style={styles.alertDot} />
+                        <Text style={styles.alertText}>Alerts</Text>
+                      </View>
+
+                      <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>DM</Text>
+                      </View>
+                    </View>
                   </View>
-                )}
 
-                <View style={styles.heroControlsRow}>
-                  <View style={styles.heroControlBlock}>
-                    <Text style={styles.companyLabel}>Company</Text>
+                  {vatAlert !== null && vatAlert !== undefined && typeof vatAlert === "object" && (
+                    <View
+                      style={[
+                        styles.vatAlertCard,
+                        vatAlert.status === "due_soon" && styles.vatAlertDueSoon,
+                        vatAlert.status === "overdue" && styles.vatAlertOverdue,
+                      ]}
+                    >
+                      <View style={styles.vatAlertHeader}>
+                        <Text style={styles.vatAlertTitle}>{vatAlert.title}</Text>
 
-                    <View style={styles.companyPickerWrap}>
-                      {companiesLoading ? (
-                        <Text style={styles.companyLoadingText}>
-                          Loading companies...
-                        </Text>
-                      ) : (
-                        <Picker
-                          selectedValue={
-                            selectedCompany?.id ? String(selectedCompany.id) : ""
-                          }
-                          onValueChange={(value) => {
-                            const company = companies.find(
-                              (item) => String(item.id) === String(value)
-                            );
-
-                            if (!company) return;
-
-                            setLoading(true);
-                            setSelectedCompany(company);
-
-                            setOverview({
-                              totalSales: 0,
-                              outputVAT: 0,
-                              inputVAT: 0,
-                              netVATPayable: 0,
-                            });
-                            
-                            setAuditSummary({
-                              unlinkedCount: 0,
-                              linkedCount: 0,
-                              totalDocuments: 0,
-                            });
-                            setError("");
-                            setRefreshKey((prev) => prev + 1);
-                          }}
-                          style={styles.picker}
+                        <View
+                          style={[
+                            styles.vatAlertBadge,
+                            vatAlert.status === "due_soon" &&
+                            styles.vatAlertBadgeDueSoon,
+                            vatAlert.status === "overdue" &&
+                            styles.vatAlertBadgeOverdue,
+                          ]}
                         >
-                          {companies.map((company) => (
-                            <Picker.Item
-                              key={company.id}
-                              label={company.name || company.company_name}
-                              value={String(company.id)}
-                            />
-                          ))}
-                        </Picker>
-                      )}
+                          <Text style={styles.vatAlertBadgeText}>
+                            {vatAlert.status === "overdue"
+                              ? "Overdue"
+                              : vatAlert.status === "due_soon"
+                                ? "Due Soon"
+                                : "Upcoming"}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <Text style={styles.vatAlertDate}>
+                        Due date: {vatAlert.dueDate}
+                      </Text>
+                      <Text style={styles.vatAlertMessage}>
+                        {vatAlert.message}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.heroControlsRow}>
+                    <View style={styles.heroControlBlock}>
+                      <Text style={styles.companyLabel}>Company</Text>
+
+                      <View style={styles.companyPickerWrap}>
+                        {companiesLoading ? (
+                          <Text style={styles.companyLoadingText}>
+                            Loading companies...
+                          </Text>
+                        ) : (
+                          <Picker
+                            selectedValue={
+                              selectedCompany?.id ? String(selectedCompany.id) : ""
+                            }
+                            onValueChange={(value) => {
+                              const company = companies.find(
+                                (item) => String(item.id) === String(value)
+                              );
+
+                              if (!company) return;
+
+                              setLoading(true);
+                              setSelectedCompany(company);
+
+                              setOverview({
+                                totalSales: 0,
+                                outputVAT: 0,
+                                inputVAT: 0,
+                                netVATPayable: 0,
+                              });
+
+                              setAuditSummary({
+                                unlinkedCount: 0,
+                                linkedCount: 0,
+                                totalDocuments: 0,
+                              });
+                              setError("");
+                              setRefreshKey((prev) => prev + 1);
+                            }}
+                            style={styles.picker}
+                          >
+                            {companies.map((company) => (
+                              <Picker.Item
+                                key={company.id}
+                                label={company.name || company.company_name}
+                                value={String(company.id)}
+                              />
+                            ))}
+                          </Picker>
+                        )}
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
+              )}
 
-              <View style={styles.periodCard}>
-                <Text style={styles.sectionTitle}>VAT Period</Text>
+              {false && (
+                <View style={styles.periodCard}>
+                  <Text style={styles.sectionTitle}>VAT Period</Text>
 
-                <View style={styles.selectRow}>
-                  {["monthly", "quarterly", "custom"].map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      onPress={() => setVatPeriodType(type)}
-                      style={[
-                        styles.selectOption,
-                        vatPeriodType === type && styles.selectOptionActive,
-                      ]}
-                    >
-                      <Text
+                  <View style={styles.selectRow}>
+                    {["monthly", "quarterly", "custom"].map((type) => (
+                      <TouchableOpacity
+                        key={type}
+                        onPress={() => setVatPeriodType(type)}
                         style={[
-                          styles.selectOptionText,
-                          vatPeriodType === type &&
-                          styles.selectOptionTextActive,
+                          styles.selectOption,
+                          vatPeriodType === type && styles.selectOptionActive,
                         ]}
                       >
-                        {type.toUpperCase()}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {vatPeriodType === "monthly" && (
-                  <TextInput
-                    style={styles.input}
-                    placeholder="YYYY-MM"
-                    value={selectedMonth}
-                    onChangeText={(value) =>
-                      setPeriodFilters((prev) => ({
-                        ...prev,
-                        month: value,
-                      }))
-                    }
-                  />
-                )}
-
-                {vatPeriodType === "quarterly" && (
-                  <View style={styles.periodRow}>
-                    <TextInput
-                      style={[styles.input, styles.periodInput]}
-                      placeholder="Year"
-                      value={String(selectedYear)}
-                      onChangeText={(value) =>
-                        setPeriodFilters((prev) => ({
-                          ...prev,
-                          year: value,
-                        }))
-                      }
-                    />
-                    <TextInput
-                      style={[styles.input, styles.periodInput]}
-                      placeholder="Q1 / Q2 / Q3 / Q4"
-                      value={selectedQuarter}
-                      onChangeText={(value) =>
-                        setPeriodFilters((prev) => ({
-                          ...prev,
-                          quarter: value,
-                        }))
-                      }
-                    />
+                        <Text
+                          style={[
+                            styles.selectOptionText,
+                            vatPeriodType === type &&
+                            styles.selectOptionTextActive,
+                          ]}
+                        >
+                          {type.toUpperCase()}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
-                )}
 
-                {vatPeriodType === "custom" && (
-                  <View style={styles.periodRow}>
+                  {vatPeriodType === "monthly" && (
                     <TextInput
-                      style={[styles.input, styles.periodInput]}
-                      placeholder="Start YYYY-MM-DD"
-                      value={startDate}
+                      style={styles.input}
+                      placeholder="YYYY-MM"
+                      value={selectedMonth}
                       onChangeText={(value) =>
                         setPeriodFilters((prev) => ({
                           ...prev,
-                          startDate: value,
+                          month: value,
                         }))
                       }
                     />
-                    <TextInput
-                      style={[styles.input, styles.periodInput]}
-                      placeholder="End YYYY-MM-DD"
-                      value={endDate}
-                      onChangeText={(value) =>
-                        setPeriodFilters((prev) => ({
-                          ...prev,
-                          endDate: value,
-                        }))
-                      }
-                    />
-                  </View>
-                )}
-              </View>
+                  )}
+
+                  {vatPeriodType === "quarterly" && (
+                    <View style={styles.periodRow}>
+                      <TextInput
+                        style={[styles.input, styles.periodInput]}
+                        placeholder="Year"
+                        value={String(selectedYear)}
+                        onChangeText={(value) =>
+                          setPeriodFilters((prev) => ({
+                            ...prev,
+                            year: value,
+                          }))
+                        }
+                      />
+                      <TextInput
+                        style={[styles.input, styles.periodInput]}
+                        placeholder="Q1 / Q2 / Q3 / Q4"
+                        value={selectedQuarter}
+                        onChangeText={(value) =>
+                          setPeriodFilters((prev) => ({
+                            ...prev,
+                            quarter: value,
+                          }))
+                        }
+                      />
+                    </View>
+                  )}
+
+                  {vatPeriodType === "custom" && (
+                    <View style={styles.periodRow}>
+                      <TextInput
+                        style={[styles.input, styles.periodInput]}
+                        placeholder="Start YYYY-MM-DD"
+                        value={startDate}
+                        onChangeText={(value) =>
+                          setPeriodFilters((prev) => ({
+                            ...prev,
+                            startDate: value,
+                          }))
+                        }
+                      />
+                      <TextInput
+                        style={[styles.input, styles.periodInput]}
+                        placeholder="End YYYY-MM-DD"
+                        value={endDate}
+                        onChangeText={(value) =>
+                          setPeriodFilters((prev) => ({
+                            ...prev,
+                            endDate: value,
+                          }))
+                        }
+                      />
+                    </View>
+                  )}
+                </View>)}
 
               {companyError ? (
                 <Text style={styles.errorText}>{companyError}</Text>
               ) : null}
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-              <TouchableOpacity
-                style={styles.auditScoreCard}
-                onPress={() => setActivePage("Documents")}
-                activeOpacity={0.9}
-              >
-                <View style={styles.auditScoreHeader}>
-                  <View>
-                    <Text style={styles.auditScoreLabel}>
-                      Audit Readiness Score
-                    </Text>
-                    <Text style={styles.auditScoreTitle}>
-                      {auditReadiness.label}
-                    </Text>
-                  </View>
+              {false && (
+                <TouchableOpacity
+                  style={styles.auditScoreCard}
+                  onPress={() => setActivePage("Documents")}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.auditScoreHeader}>
+                    <View>
+                      <Text style={styles.auditScoreLabel}>
+                        Audit Readiness Score
+                      </Text>
+                      <Text style={styles.auditScoreTitle}>
+                        {auditReadiness.label}
+                      </Text>
+                    </View>
 
-                  <View style={styles.auditHeaderRight}>
-                    {/* STATUS BADGE (NEW) */}
-                    <View
-                      style={[
-                        styles.auditStatusBadge,
-                        {
-                          backgroundColor: auditStatus.bg,
-                          borderColor: auditStatus.border,
-                        },
-                      ]}
-                    >
-                      <Text
+                    <View style={styles.auditHeaderRight}>
+                      {/* STATUS BADGE (NEW) */}
+                      <View
                         style={[
-                          styles.auditStatusBadgeText,
-                          { color: auditStatus.color },
+                          styles.auditStatusBadge,
+                          {
+                            backgroundColor: auditStatus.bg,
+                            borderColor: auditStatus.border,
+                          },
                         ]}
                       >
-                        {auditStatus.label}
-                      </Text>
-                    </View>
+                        <Text
+                          style={[
+                            styles.auditStatusBadgeText,
+                            { color: auditStatus.color },
+                          ]}
+                        >
+                          {auditStatus.label}
+                        </Text>
+                      </View>
 
-                    {/* SCORE BADGE */}
-                    <View
-                      style={[
-                        styles.auditScoreBadge,
-                        auditReadiness.level === "excellent" &&
-                        styles.auditScoreBadgeExcellent,
-                        auditReadiness.level === "good" &&
-                        styles.auditScoreBadgeGood,
-                        auditReadiness.level === "warning" &&
-                        styles.auditScoreBadgeWarning,
-                        auditReadiness.level === "critical" &&
-                        styles.auditScoreBadgeCritical,
-                      ]}
-                    >
-                      <Text style={styles.auditScoreBadgeText}>
-                        {auditReadiness.score}%
-                      </Text>
+                      {/* SCORE BADGE */}
+                      <View
+                        style={[
+                          styles.auditScoreBadge,
+                          auditReadiness.level === "excellent" &&
+                          styles.auditScoreBadgeExcellent,
+                          auditReadiness.level === "good" &&
+                          styles.auditScoreBadgeGood,
+                          auditReadiness.level === "warning" &&
+                          styles.auditScoreBadgeWarning,
+                          auditReadiness.level === "critical" &&
+                          styles.auditScoreBadgeCritical,
+                        ]}
+                      >
+                        <Text style={styles.auditScoreBadgeText}>
+                          {auditReadiness.score}%
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                <Text style={styles.auditScoreMessage}>
-                  {auditReadiness.message}
-                </Text>
-
-                <View style={styles.auditScoreBarTrack}>
-                  <View
-                    style={[
-                      styles.auditScoreBarFill,
-                      { width: `${auditReadiness.score}%` },
-                      auditReadiness.level === "excellent" &&
-                      styles.auditScoreBarExcellent,
-                      auditReadiness.level === "good" &&
-                      styles.auditScoreBarGood,
-                      auditReadiness.level === "warning" &&
-                      styles.auditScoreBarWarning,
-                      auditReadiness.level === "critical" &&
-                      styles.auditScoreBarCritical,
-                    ]}
-                  />
-                </View>
-
-                <View style={styles.auditScoreFooter}>
-                  <Text style={styles.auditScoreMeta}>
-                    Unlinked documents: {auditSummary?.unlinkedCount || 0}
+                  <Text style={styles.auditScoreMessage}>
+                    {auditReadiness.message}
                   </Text>
 
-                  <Text style={styles.auditScoreLinkText}>
-                    {auditReadiness.action} →
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                  <View style={styles.auditScoreBarTrack}>
+                    <View
+                      style={[
+                        styles.auditScoreBarFill,
+                        { width: `${auditReadiness.score}%` },
+                        auditReadiness.level === "excellent" &&
+                        styles.auditScoreBarExcellent,
+                        auditReadiness.level === "good" &&
+                        styles.auditScoreBarGood,
+                        auditReadiness.level === "warning" &&
+                        styles.auditScoreBarWarning,
+                        auditReadiness.level === "critical" &&
+                        styles.auditScoreBarCritical,
+                      ]}
+                    />
+                  </View>
+
+                  <View style={styles.auditScoreFooter}>
+                    <Text style={styles.auditScoreMeta}>
+                      Unlinked documents: {auditSummary?.unlinkedCount || 0}
+                    </Text>
+
+                    <Text style={styles.auditScoreLinkText}>
+                      {auditReadiness.action} →
+                    </Text>
+                  </View>
+                </TouchableOpacity>)}
 
               {documentAuditAlert !== null && documentAuditAlert !== undefined && typeof documentAuditAlert === "object" && (
                 <View
