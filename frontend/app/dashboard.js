@@ -263,13 +263,14 @@ export default function Dashboard() {
   const [companies, setCompanies] = useState([]);
   const [companySettings, setCompanySettings] = useState(null);
   const { selectedCompany, setSelectedCompany, companyReady } = useCompany();
+  const CURRENT_YEAR = "2026";
 
   const [vatPeriodType, setVatPeriodType] = useState("monthly");
 
   const [periodFilters, setPeriodFilters] = useState({
     month: "",
     quarter: "Q1",
-    year: String(new Date().getFullYear()),
+    year: CURRENT_YEAR,
     startDate: "",
     endDate: "",
   });
@@ -575,7 +576,7 @@ export default function Dashboard() {
     setPeriodFilters({
       month: "",
       quarter: "Q1",
-      year: String(new Date().getFullYear()),
+      year: CURRENT_YEAR,
       startDate: "",
       endDate: "",
     });
