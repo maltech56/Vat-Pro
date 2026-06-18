@@ -455,8 +455,18 @@ export default function Dashboard() {
 
     console.log("AUDIT SUMMARY RESPONSE:", data);
 
+    console.count("setAuditSummary called");
+
+    setAuditSummary({
+      unlinkedCount: Number(data.unlinkedCount || 0),
+      linkedCount: Number(data.linkedCount || 0),
+      totalDocuments: Number(data.totalDocuments || 0),
+    });
+
   } catch (error) {
     console.error("fetchAuditSummary error:", error);
+
+    console.count("setAuditSummary called");
 
     setAuditSummary({
       unlinkedCount: 0,
@@ -594,6 +604,8 @@ export default function Dashboard() {
   }, [selectedCompany?.id]);
 
   // console.log("Dashboard user:", user);
+
+  console.log("AUDIT SUMMARY STATE:", auditSummary);
 
   if (loading) {
     console.log("ACTIVE PAGE:", activePage);
