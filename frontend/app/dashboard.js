@@ -455,19 +455,6 @@ export default function Dashboard() {
 
     console.log("AUDIT SUMMARY RESPONSE:", data);
 
-    setAuditSummary((current) => {
-      console.log("PREVIOUS AUDIT SUMMARY:", current);
-
-      const next = {
-        unlinkedCount: Number(data.unlinkedCount || 0),
-        linkedCount: Number(data.linkedCount || 0),
-        totalDocuments: Number(data.totalDocuments || 0),
-      };
-
-      console.log("NEXT AUDIT SUMMARY:", next);
-
-      return next;
-    });
   } catch (error) {
     console.error("fetchAuditSummary error:", error);
 
@@ -593,22 +580,7 @@ export default function Dashboard() {
       inputVAT: 0,
       netVATPayable: 0,
     });
-   console.log("AUDIT SUMMARY RESPONSE:", data);
-
-setAuditSummary((current) => {
-  console.log("PREVIOUS AUDIT SUMMARY:", current);
-
-  const next = {
-    unlinkedCount: Number(data.unlinkedCount || 0),
-    linkedCount: Number(data.linkedCount || 0),
-    totalDocuments: Number(data.totalDocuments || 0),
-  };
-
-  console.log("NEXT AUDIT SUMMARY:", next);
-
-  return next;
-});
-
+   
     setError("");
 
     setPeriodFilters({
