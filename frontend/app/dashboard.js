@@ -954,7 +954,7 @@ export default function Dashboard() {
                   </View>
                 </TouchableOpacity>)}
 
-              {documentAuditAlert !== null && documentAuditAlert !== undefined && typeof documentAuditAlert === "object" && (
+              {false && (
                 <View
                   style={[
                     styles.auditAlertCard,
