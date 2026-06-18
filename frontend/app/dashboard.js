@@ -237,10 +237,6 @@ export default function Dashboard() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [pageOptions, setPageOptions] = useState({});
 
-  console.count("DASHBOARD COMPONENT RENDER");
-
-  console.log("AUDIT SUMMARY STATE:", auditSummary);
-
   const handleSelectPage = (page, options = {}) => {
     setActivePage(page);
     setPageOptions(options);
@@ -348,14 +344,12 @@ export default function Dashboard() {
     endDate,
   ]);
 
-  console.count("DASHBOARD fetchCompanies callback created");
 
+  
   const fetchCompanies = useCallback(async () => {
     try {
       setCompaniesLoading(true);
       setCompanyError("");
-
-      console.count("DASHBOARD fetchCompanies callback executed");
 
       if (!user?.id) {
         setCompanyError("User information is missing. Please log in again.");
@@ -369,7 +363,6 @@ export default function Dashboard() {
 
       const companyList = Array.isArray(data) ? data : [];
 
-      console.count("setCompanies called");
       setCompanies(companyList);
 
       if (companyList.length === 0) {
@@ -427,8 +420,6 @@ export default function Dashboard() {
 
       const data = response;
 
-      console.count("setOverview called");
-
       setOverview({
         totalSales: Number(data.totalSales || 0),
         outputVAT: Number(data.outputVAT || 0),
@@ -444,41 +435,33 @@ export default function Dashboard() {
   }, [getDateRange, selectedCompany?.id]);
 
   const fetchAuditSummary = useCallback(async (companyId) => {
-  try {
-    const response = await apiFetch(
-      `/documents/company/${companyId}/unlinked-summary`
-    );
+    try {
+      const response = await apiFetch(
+        `/documents/company/${companyId}/unlinked-summary`
+      );
 
-    if (!response) return;
+      if (!response) return;
 
-    const data = response;
+      const data = response;
 
-    console.log("AUDIT SUMMARY RESPONSE:", data);
+      setAuditSummary({
+        unlinkedCount: Number(data.unlinkedCount || 0),
+        linkedCount: Number(data.linkedCount || 0),
+        totalDocuments: Number(data.totalDocuments || 0),
+      });
 
-    console.count("setAuditSummary called");
+    } catch (error) {
+      console.error("fetchAuditSummary error:", error);
 
-    setAuditSummary({
-      unlinkedCount: Number(data.unlinkedCount || 0),
-      linkedCount: Number(data.linkedCount || 0),
-      totalDocuments: Number(data.totalDocuments || 0),
-    });
-
-  } catch (error) {
-    console.error("fetchAuditSummary error:", error);
-
-    console.count("setAuditSummary called");
-
-    setAuditSummary({
-      unlinkedCount: 0,
-      linkedCount: 0,
-      totalDocuments: 0,
-    });
-  }
-}, []);
+      setAuditSummary({
+        unlinkedCount: 0,
+        linkedCount: 0,
+        totalDocuments: 0,
+      });
+    }
+  }, []);
 
   useEffect(() => {
-
-    console.count("DASHBOARD fetchCompanies effect");
 
     if (!companyReady) return;
 
@@ -490,7 +473,7 @@ export default function Dashboard() {
     if (!companyReady) return;
 
     if (!selectedCompany?.id) {
-      console.count("setOverview called");
+    
       setOverview({
         totalSales: 0,
         outputVAT: 0,
@@ -498,14 +481,13 @@ export default function Dashboard() {
         netVATPayable: 0,
       });
 
-      console.count("setAuditSummary called");
       setAuditSummary({
         unlinkedCount: 0,
         linkedCount: 0,
         totalDocuments: 0,
       });
 
-      setLoading(false);   // <-- ADD THIS
+      setLoading(false);
 
       return;
     }
@@ -525,7 +507,6 @@ export default function Dashboard() {
     if (!selectedCompany?.id) return;
 
     const interval = setInterval(() => {
-      console.count("AUDIT POLL FIRED");
       fetchAuditSummary(selectedCompany.id);
 
       setVatAlert((currentAlert) => {
@@ -564,7 +545,6 @@ export default function Dashboard() {
 
         console.log("COMPANY SETTINGS:", settings);
 
-        console.count("setCompanySettings called");
         setCompanySettings(settings);
 
         const dueDay = Number(settings?.vatDueDay ?? VAT_DUE_DAY);
@@ -583,14 +563,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedCompany?.id) return;
-    console.count("setOverview called");
-    setOverview({
+      setOverview({
       totalSales: 0,
       outputVAT: 0,
       inputVAT: 0,
       netVATPayable: 0,
     });
-   
+
     setError("");
 
     setPeriodFilters({
@@ -605,10 +584,8 @@ export default function Dashboard() {
 
   // console.log("Dashboard user:", user);
 
-  console.log("AUDIT SUMMARY STATE:", auditSummary);
-
+  
   if (loading) {
-    console.log("ACTIVE PAGE:", activePage);
     return (
       <View style={styles.loadingPage}>
         <ActivityIndicator size="large" />
@@ -629,7 +606,7 @@ export default function Dashboard() {
     <View style={styles.page}>
       {/* Sidebar disabled for test */}
       <View style={styles.main}>
-        {false && (
+        {activePage === "Dashboard" && (
 
           <View style={{ flex: 1 }}>
             <View style={styles.topBar}>
@@ -755,14 +732,13 @@ export default function Dashboard() {
                             setLoading(true);
                             setSelectedCompany(company);
 
-                            console.count("setOverview called");
                             setOverview({
                               totalSales: 0,
                               outputVAT: 0,
                               inputVAT: 0,
                               netVATPayable: 0,
                             });
-                            console.count("setAuditSummary called");
+                            
                             setAuditSummary({
                               unlinkedCount: 0,
                               linkedCount: 0,
@@ -1138,8 +1114,11 @@ export default function Dashboard() {
         {activePage === "Documents" && <DocumentsScreen pageOptions={pageOptions} />}
         {activePage === "Reports" && <ReportsScreen />}
         {activePage === "Audit Dashboard" && (
+
+
           <AuditDashboardScreen pageOptions={pageOptions} />
         )}
+
         {activePage === "VAT Returns" && <VatReturnsScreen />}
         {activePage === "VAT Filing" && (
           <VatFilingScreen
@@ -1240,6 +1219,8 @@ const styles = StyleSheet.create({
     padding: 28,
     paddingBottom: 40,
   },
+
+
   heroCard: {
     backgroundColor: "#FFFFFF",
     padding: 28,
