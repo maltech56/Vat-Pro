@@ -595,13 +595,13 @@ export default function Dashboard() {
     );
   }
 
-  if (!selectedCompany) {
-    return (
-      <View style={styles.loadingPage}>
-        <Text>No company selected.</Text>
-      </View>
-    );
-  }
+  return (
+    <View style={{ padding: 40 }}>
+      <Text>Dashboard Test</Text>
+      <Text>Company: {selectedCompany?.name}</Text>
+      <Text>ID: {selectedCompany?.id}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.page}>
