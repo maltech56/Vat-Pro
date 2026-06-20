@@ -241,7 +241,7 @@ export default function Dashboard() {
     setActivePage(page);
     setPageOptions(options);
   };
-
+  /*
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -256,7 +256,7 @@ export default function Dashboard() {
     if (transactionId) {
       localStorage.setItem("highlightTransactionId", transactionId);
     }
-  }, []);
+  }, []);*/
 
 
   const [user] = useState(() => getUser());
@@ -461,15 +461,16 @@ export default function Dashboard() {
       });
     }
   }, []);
-
-  useEffect(() => {
-
-    if (!companyReady) return;
-
-    fetchCompanies();
-
-  }, [companyReady, fetchCompanies]);
-
+  /*
+    useEffect(() => {
+  
+      if (!companyReady) return;
+  
+      fetchCompanies();
+  
+    }, [companyReady, fetchCompanies]);
+    */
+/*
   useEffect(() => {
     if (!companyReady) return;
 
@@ -501,8 +502,8 @@ export default function Dashboard() {
     refreshKey,
     fetchOverview,
     fetchAuditSummary,
-  ]);
-
+  ]);*/
+/*
   useEffect(() => {
     if (!companyReady) return;
     if (!selectedCompany?.id) return;
@@ -522,9 +523,9 @@ export default function Dashboard() {
     selectedCompany?.id,
     companySettings?.vatDueDay,
     fetchAuditSummary,
-  ]);
+  ]);*/
 
-
+/*
   useEffect(() => {
     const loadCompanySettings = async () => {
       if (!companyReady) return;
@@ -560,8 +561,8 @@ export default function Dashboard() {
 
   const handleTransactionSaved = () => {
     setRefreshKey((prev) => prev + 1);
-  };
-
+  };*/
+/*
   useEffect(() => {
     if (!selectedCompany?.id) return;
     setOverview({
@@ -582,7 +583,7 @@ export default function Dashboard() {
     });
 
   }, [selectedCompany?.id]);
-
+*/
   // console.log("Dashboard user:", user);
 
 
