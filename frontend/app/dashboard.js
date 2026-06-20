@@ -229,7 +229,7 @@ export default function Dashboard() {
   });
 
   const [vatAlert, setVatAlert] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [companiesLoading, setCompaniesLoading] = useState(true);
   const [error, setError] = useState("");
   const [companyError, setCompanyError] = useState("");
