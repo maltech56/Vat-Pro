@@ -1,31 +1,27 @@
 import React, { useEffect, useState, useCallback } from "react";
-import TransactionsPage from "./transactions";
-import VatFilingScreen from "./vat-filing";
-import Purchases from "./purchases";
-import VatFilingHistory from "./vat-filing-history";
-import VatReturnsScreen from "../components/VatReturnsScreen";
-import ImportsScreen from "../components/ImportsScreen";
-import DocumentsScreen from "../components/DocumentsScreen";
-import ReportsScreen from "../components/ReportsScreen";
-import SettingsScreen from "../components/SettingsScreen";
-import CreateCompanyScreen from "../components/CreateCompanyScreen";
-import AuditDashboardScreen from "../components/AuditDashboardScreen";
-import ErrorBoundary from "../components/ErrorBoundary";
+//import TransactionsPage from "./transactions";
+//import VatFilingScreen from "./vat-filing";
+//import Purchases from "./purchases";
+//import VatFilingHistory from "./vat-filing-history";
+//import VatReturnsScreen from "../components/VatReturnsScreen";
+//import ImportsScreen from "../components/ImportsScreen";
+//import DocumentsScreen from "../components/DocumentsScreen";
+//import ReportsScreen from "../components/ReportsScreen";
+//import SettingsScreen from "../components/SettingsScreen";
+//import CreateCompanyScreen from "../components/CreateCompanyScreen";
+//import AuditDashboardScreen from "../components/AuditDashboardScreen";
+//import ErrorBoundary from "../components/ErrorBoundary";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
-  ScrollView,
   ActivityIndicator,
-  TouchableOpacity,
-  TextInput,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+//import { Picker } from "@react-native-picker/picker";
 
-import Sidebar from "../components/Sidebar";
-import AddTransaction from "./add-transaction";
-import RecentTransactions from "../components/RecentTransactions";
+//import Sidebar from "../components/Sidebar";
+//import AddTransaction from "./add-transaction";
+//import RecentTransactions from "../components/RecentTransactions";
 
 import { getUser } from "../src/utils/session";
 //import { useCompany } from "../context/CompanyContext";
