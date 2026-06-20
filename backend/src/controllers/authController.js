@@ -5,36 +5,51 @@ const createDefaultCompanySettings = require("../utils/createDefaultCompanySetti
 
 // ================= LOGIN =================
 exports.login = async (req, res) => {
-
   try {
+    console.log("LOGIN START");
+
     const { email, password } = req.body;
+    console.log("EMAIL:", email);
 
     if (!email || !password) {
       return res.status(400).json({ message: "Missing credentials" });
     }
+
+    console.log("QUERYING USER");
 
     const result = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
+    console.log("USER QUERY COMPLETE");
+
     if (result.rows.length === 0) {
+      console.log("USER NOT FOUND");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const user = result.rows[0];
 
+    console.log("USER FOUND:", user.id);
+
     const isMatch = await bcrypt.compare(password, user.password);
+
+    console.log("PASSWORD CHECK COMPLETE");
 
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    console.log("CREATING JWT");
 
     const token = jwt.sign(
       { id: user.id },
       process.env.JWT_SECRET,
       { expiresIn: "8h" }
     );
+
+    console.log("LOGIN SUCCESS");
 
     return res.json({
       token,
@@ -47,8 +62,12 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("🔥 LOGIN CRASH:", error);
-    res.status(500).json({ message: "Server error during login" });
+    console.error("LOGIN CRASH:", error);
+    console.error(error.stack);
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
 

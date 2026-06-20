@@ -28,7 +28,7 @@ import AddTransaction from "./add-transaction";
 import RecentTransactions from "../components/RecentTransactions";
 
 import { getUser } from "../src/utils/session";
-import { useCompany } from "../context/CompanyContext";
+//import { useCompany } from "../context/CompanyContext";
 import { formatCurrency } from "../src/utils/formatters";
 import { apiFetch } from "../src/utils/apiFetch";
 
@@ -262,7 +262,13 @@ export default function Dashboard() {
   const [user] = useState(() => getUser());
   const [companies, setCompanies] = useState([]);
   const [companySettings, setCompanySettings] = useState(null);
-  const { selectedCompany, setSelectedCompany, companyReady } = useCompany();
+  const selectedCompany = {
+    id: 12,
+    name: "Test Company",
+  };
+
+  const setSelectedCompany = () => { };
+  const companyReady = true;
   const CURRENT_YEAR = "2026";
 
   const [vatPeriodType, setVatPeriodType] = useState("monthly");
@@ -470,120 +476,120 @@ export default function Dashboard() {
   
     }, [companyReady, fetchCompanies]);
     */
-/*
-  useEffect(() => {
-    if (!companyReady) return;
+  /*
+    useEffect(() => {
+      if (!companyReady) return;
+  
+      if (!selectedCompany?.id) {
+  
+        setOverview({
+          totalSales: 0,
+          outputVAT: 0,
+          inputVAT: 0,
+          netVATPayable: 0,
+        });
+  
+        setAuditSummary({
+          unlinkedCount: 0,
+          linkedCount: 0,
+          totalDocuments: 0,
+        });
+  
+        setLoading(false);
+  
+        return;
+      }
+  
+      fetchOverview();
+      fetchAuditSummary(selectedCompany.id);
+    }, [
+      companyReady,
+      selectedCompany?.id,
+      refreshKey,
+      fetchOverview,
+      fetchAuditSummary,
+    ]);*/
+  /*
+    useEffect(() => {
+      if (!companyReady) return;
+      if (!selectedCompany?.id) return;
+  
+      const interval = setInterval(() => {
+        fetchAuditSummary(selectedCompany.id);
+  
+        setVatAlert((currentAlert) => {
+          const dueDay = Number(companySettings?.vatDueDay ?? VAT_DUE_DAY);
+          return buildVatAlert(dueDay);
+        });
+      }, 30000);
+  
+      return () => clearInterval(interval);
+    }, [
+      companyReady,
+      selectedCompany?.id,
+      companySettings?.vatDueDay,
+      fetchAuditSummary,
+    ]);*/
 
-    if (!selectedCompany?.id) {
-
+  /*
+    useEffect(() => {
+      const loadCompanySettings = async () => {
+        if (!companyReady) return;
+  
+        if (!selectedCompany?.id) {
+          return;
+        }
+  
+        try {
+          const response = await apiFetch(
+            `/settings/company/${selectedCompany.id}`
+          );
+  
+          if (!response) return;
+  
+          const data = response;
+  
+          const settings = data.settings || null;
+  
+          console.log("COMPANY SETTINGS:", settings);
+  
+          setCompanySettings(settings);
+  
+          const dueDay = Number(settings?.vatDueDay ?? VAT_DUE_DAY);
+          setVatAlert(buildVatAlert(dueDay));
+        } catch (error) {
+          console.error("LOAD COMPANY SETTINGS ERROR:", error);
+        }
+      };
+  
+      loadCompanySettings();
+    }, [companyReady, selectedCompany?.id]);
+  
+    const handleTransactionSaved = () => {
+      setRefreshKey((prev) => prev + 1);
+    };*/
+  /*
+    useEffect(() => {
+      if (!selectedCompany?.id) return;
       setOverview({
         totalSales: 0,
         outputVAT: 0,
         inputVAT: 0,
         netVATPayable: 0,
       });
-
-      setAuditSummary({
-        unlinkedCount: 0,
-        linkedCount: 0,
-        totalDocuments: 0,
+  
+      setError("");
+  
+      setPeriodFilters({
+        month: "",
+        quarter: "Q1",
+        year: CURRENT_YEAR,
+        startDate: "",
+        endDate: "",
       });
-
-      setLoading(false);
-
-      return;
-    }
-
-    fetchOverview();
-    fetchAuditSummary(selectedCompany.id);
-  }, [
-    companyReady,
-    selectedCompany?.id,
-    refreshKey,
-    fetchOverview,
-    fetchAuditSummary,
-  ]);*/
-/*
-  useEffect(() => {
-    if (!companyReady) return;
-    if (!selectedCompany?.id) return;
-
-    const interval = setInterval(() => {
-      fetchAuditSummary(selectedCompany.id);
-
-      setVatAlert((currentAlert) => {
-        const dueDay = Number(companySettings?.vatDueDay ?? VAT_DUE_DAY);
-        return buildVatAlert(dueDay);
-      });
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [
-    companyReady,
-    selectedCompany?.id,
-    companySettings?.vatDueDay,
-    fetchAuditSummary,
-  ]);*/
-
-/*
-  useEffect(() => {
-    const loadCompanySettings = async () => {
-      if (!companyReady) return;
-
-      if (!selectedCompany?.id) {
-        return;
-      }
-
-      try {
-        const response = await apiFetch(
-          `/settings/company/${selectedCompany.id}`
-        );
-
-        if (!response) return;
-
-        const data = response;
-
-        const settings = data.settings || null;
-
-        console.log("COMPANY SETTINGS:", settings);
-
-        setCompanySettings(settings);
-
-        const dueDay = Number(settings?.vatDueDay ?? VAT_DUE_DAY);
-        setVatAlert(buildVatAlert(dueDay));
-      } catch (error) {
-        console.error("LOAD COMPANY SETTINGS ERROR:", error);
-      }
-    };
-
-    loadCompanySettings();
-  }, [companyReady, selectedCompany?.id]);
-
-  const handleTransactionSaved = () => {
-    setRefreshKey((prev) => prev + 1);
-  };*/
-/*
-  useEffect(() => {
-    if (!selectedCompany?.id) return;
-    setOverview({
-      totalSales: 0,
-      outputVAT: 0,
-      inputVAT: 0,
-      netVATPayable: 0,
-    });
-
-    setError("");
-
-    setPeriodFilters({
-      month: "",
-      quarter: "Q1",
-      year: CURRENT_YEAR,
-      startDate: "",
-      endDate: "",
-    });
-
-  }, [selectedCompany?.id]);
-*/
+  
+    }, [selectedCompany?.id]);
+  */
   // console.log("Dashboard user:", user);
 
 
