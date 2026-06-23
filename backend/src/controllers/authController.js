@@ -17,6 +17,14 @@ exports.login = async (req, res) => {
 
     console.log("QUERYING USER");
 
+    const dbInfo = await pool.query(`
+  SELECT
+    current_database() AS db,
+    current_user AS db_user
+`);
+
+    console.log("DB INFO:", dbInfo.rows[0]);
+
     const result = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -25,16 +33,28 @@ exports.login = async (req, res) => {
     console.log("USER QUERY COMPLETE");
 
     if (result.rows.length === 0) {
-      console.log("USER NOT FOUND");
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+      console.log("USER NOT FOUND:", email);
 
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
+    }
     const user = result.rows[0];
+
+    console.log("USER RECORD:");
+    console.log(user);
 
     console.log("USER FOUND:", user.id);
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    console.log("PASSWORD FROM LOGIN:", password);
+    console.log("HASH FROM DB:", user.password);
 
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    console.log("ISMATCH:", isMatch);
     console.log("PASSWORD CHECK COMPLETE");
 
     if (!isMatch) {
@@ -42,6 +62,11 @@ exports.login = async (req, res) => {
     }
 
     console.log("CREATING JWT");
+
+    console.log(
+      "SIGNING JWT WITH:",
+      process.env.JWT_SECRET
+    );
 
     const token = jwt.sign(
       { id: user.id },
@@ -240,8 +265,10 @@ exports.changePassword = async (req, res) => {
     const isMatch = await bcrypt.compare(currentPassword, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({
-        error: "Current password is incorrect",
+      console.log("PASSWORD MISMATCH FOR:", email);
+
+      return res.status(401).json({
+        message: "Invalid credentials"
       });
     }
 

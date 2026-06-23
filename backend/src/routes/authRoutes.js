@@ -8,6 +8,10 @@ router.post("/register", authController.register);
 
 router.post(
   "/login",
+  (req, res, next) => {
+    console.log("LOGIN ROUTE HIT");
+    next();
+  },
   authLimiter,
   authController.login
 );

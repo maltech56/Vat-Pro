@@ -36,9 +36,16 @@ app.use(helmet());
 
 const allowedOrigins = [
   process.env.CORS_ORIGIN,
-  "http://localhost:8084",
-  "http://localhost:8083",
   "http://localhost:8081",
+  "http://localhost:8082",
+  "http://localhost:8083",
+  "http://localhost:8084",
+  "http://localhost:8085",
+  "http://localhost:8086",
+  "http://localhost:8087",
+  "http://localhost:8088",
+  "http://localhost:8089",
+  "http://localhost:8090",
   "https://vatpro.maltechdigital.com",
   "https://www.maltechdigital.com",
   "https://maltechdigital.com",
@@ -48,20 +55,20 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin(origin, callback) {
+    origin: function (origin, callback) {
+
+      if (process.env.NODE_ENV !== "production") {
+        return callback(null, true);
+      }
+
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      console.error(
-        `Blocked by CORS: ${origin}`
-      );
-
-      callback(
-        new Error(`CORS blocked for origin: ${origin}`)
-      );
+      console.error(`Blocked by CORS: ${origin}`);
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
   })
