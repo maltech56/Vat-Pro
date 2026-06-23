@@ -60,7 +60,7 @@ export const CompanyProvider = ({ children }) => {
 
         const API_BASE =
           process.env.EXPO_PUBLIC_API_URL ||
-          "https://api.maltechenterprises.com/api";
+          "http://localhost:5000/api";
 
         const response = await fetch(
           `${API_BASE}/companies/user`,

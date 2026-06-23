@@ -2,7 +2,7 @@ import { getToken, forceLogout } from "./session";
 
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
+  "http://localhost:5000/api";
 
 export const apiFetch = async (endpoint, options = {}) => {
   const token = getToken();
