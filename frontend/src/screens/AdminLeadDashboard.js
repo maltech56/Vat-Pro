@@ -5,10 +5,7 @@ export default function AdminLeadDashboard() {
     const [search, setSearch] = useState("");
     const [selectedLead, setSelectedLead] = useState(null);
 
-    const API_BASE =
-        window.location.hostname === "localhost"
-            ? "http://localhost:5000/api"
-            : "https://api.maltechenterprises.com/api";
+    import { API_BASE } from "../api/config";
 
     const updateLeadField = async (
         id,

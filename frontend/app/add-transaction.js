@@ -1,3 +1,4 @@
+import { API_BASE } from "../src/api/config";
 import React, { useState, useEffect } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { calculateVAT } from "../src/utils/vat";
@@ -10,10 +11,6 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { getToken, getSelectedCompany } from "../src/utils/session";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
 
 export default function AddTransaction({ defaultType = "sale", onSaved }) {
   const [form, setForm] = useState({

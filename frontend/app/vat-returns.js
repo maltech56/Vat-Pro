@@ -1,3 +1,4 @@
+import { API_BASE } from "../src/api/config";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,10 +11,6 @@ import {
   ScrollView,
 } from "react-native";
 import { getToken, getSelectedCompany } from "../src/utils/session";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
 
 export default function VatReturns() {
   const [company, setCompany] = useState(null);

@@ -1,3 +1,4 @@
+import { API_BASE } from "../src/api/config";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCompany } from "../context/CompanyContext";
@@ -15,9 +16,6 @@ import {
 } from "react-native";
 
 import { getSelectedCompany, getToken } from "../src/utils/session";
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
 
 const formatCurrency = (value) => {
   const amount = Number(value || 0);

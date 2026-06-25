@@ -1,10 +1,7 @@
 import { API_BASE } from "../api/config";
 
-console.log("AUTH SERVICE API_BASE =", API_BASE);
-
 export async function loginUser(email, password) {
-  console.log("LOGIN USING API_BASE =", API_BASE);
-
+ 
   const response = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: {

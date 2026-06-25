@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE } from "../src/api/config";
 import {
   View,
   Text,
@@ -7,12 +8,6 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-
-const API_BASE =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:5000/api"
-    : "https://api.maltechenterprises.com/api";
-
 import { useRouter } from "expo-router";
 
 export default function Register() {

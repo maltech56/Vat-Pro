@@ -11,10 +11,7 @@ import {
 
 import { getToken } from "../src/utils/session";
 import { useCompany } from "../context/CompanyContext";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../src/api/config";
 
 export default function AuditDashboardScreen() {
   const { selectedCompany, companyReady } = useCompany();

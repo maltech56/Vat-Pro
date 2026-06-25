@@ -1,3 +1,4 @@
+import { API_BASE } from "../src/api/config";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
@@ -11,10 +12,6 @@ import {
 import { getToken } from "../src/utils/session";
 import { useCompany } from "../context/CompanyContext";
 import { formatCurrency } from "../src/utils/formatters";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
 
 export default function VatFilingScreen({ onNavigate }) {
   const { selectedCompany, companyReady } = useCompany();

@@ -17,10 +17,7 @@ import {
   getToken,
   clearSession,
 } from "../src/utils/session";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../src/api/config";
 
 const formatRole = (role) => {
   if (!role) return "";

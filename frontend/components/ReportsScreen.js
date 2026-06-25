@@ -11,10 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useCompany } from "../context/CompanyContext";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../src/api/config";
 
 const REPORT_TABS = [
   { key: "summary", label: "Summary" },

@@ -1,8 +1,6 @@
 import { getToken } from "./session";
 
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../api/config";   
 
 export const seedDemoDataIfNeeded = async () => {
   const alreadySeeded = localStorage.getItem("demoSeeded");

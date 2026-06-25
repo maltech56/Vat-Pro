@@ -8,10 +8,7 @@ import {
   Alert,
 } from "react-native";
 
-const API_BASE =
-  window.location.hostname === "localhost"
-    ? "http://localhost:5000/api"
-    : "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../api/config"; 
 
 export default function RegisterScreen({
   onBackToLogin,

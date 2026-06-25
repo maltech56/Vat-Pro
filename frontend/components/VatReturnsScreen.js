@@ -12,9 +12,7 @@ import {
 import { getToken, getSelectedCompany } from "../src/utils/session";
 import { formatCurrency } from "../src/utils/formatters";
 
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../src/api/config";
 
 export default function VatReturnsScreen() {
   const [company, setCompany] = useState(null);

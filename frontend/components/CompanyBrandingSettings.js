@@ -10,10 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { getToken } from "../src/utils/session";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../src/api/config";
 
 export default function CompanyBrandingSettings({selectedCompany}) {
  

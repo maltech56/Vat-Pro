@@ -16,16 +16,11 @@ import {
 import * as DocumentPicker from "expo-document-picker";
 import { Picker } from "@react-native-picker/picker";
 import { getToken } from "../src/utils/session";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../src/api/config";
 
 const FILE_BASE =
-  (process.env.EXPO_PUBLIC_API_URL ||
-    "https://api.maltechenterprises.com/api")
-    .replace("/api", "");
-
+  API_BASE.replace("/api", "")
+  
 const CATEGORY_OPTIONS = [
   "All",
   "General",

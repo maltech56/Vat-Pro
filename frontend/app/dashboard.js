@@ -538,8 +538,6 @@ export default function Dashboard() {
 
         const settings = data.settings || null;
 
-        console.log("COMPANY SETTINGS:", settings);
-
         setCompanySettings(settings);
 
         const dueDay = Number(settings?.vatDueDay ?? VAT_DUE_DAY);

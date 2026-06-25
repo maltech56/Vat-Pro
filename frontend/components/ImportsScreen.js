@@ -17,9 +17,7 @@ import {
   pickImportDocument,
   parseImportedAsset,
 } from "../src/utils/importParsers";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL || "https://api.maltechenterprises.com/api";
+import { API_BASE } from "../src/api/config";
 
 const fetchWithTimeout = async (url, options = {}, timeout = 15000) => {
   const controller = new AbortController();

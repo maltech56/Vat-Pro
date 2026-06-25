@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getToken } from "../src/utils/session";
+import { API_BASE } from "../src/api/config";
 
 const CompanyContext = createContext();
 
@@ -36,31 +37,14 @@ export const CompanyProvider = ({ children }) => {
 
 
     const fetchCompanies = async () => {
-
-      console.count("CompanyContext fetchCompanies");
-
       try {
         const token = getToken();
+        
         if (!token) {
           setCompanies([]);
           setSelectedCompanyState(null);
           return;
         }
-
-        console.log("TOKEN:", token);
-        console.log(
-          "TOKEN EXISTS:",
-          !!token
-        );
-
-        console.log(
-          "API URL:",
-          process.env.EXPO_PUBLIC_API_URL
-        );
-
-        const API_BASE =
-          process.env.EXPO_PUBLIC_API_URL ||
-          "http://localhost:5000/api";
 
         const response = await fetch(
           `${API_BASE}/companies/user`,

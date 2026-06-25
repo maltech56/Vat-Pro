@@ -1,3 +1,4 @@
+import { API_BASE } from "../src/api/config";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -16,9 +17,6 @@ import { useCompany } from "../context/CompanyContext";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
 export default function VatFilingHistory() {
   const [filings, setFilings] = useState([]);
   const [loading, setLoading] = useState(true);

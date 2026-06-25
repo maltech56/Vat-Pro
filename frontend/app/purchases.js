@@ -1,3 +1,4 @@
+import { API_BASE } from "../src/api/config";
 import React, { useEffect, useMemo, useState } from "react";
 import AddTransaction from "./add-transaction";
 import { calculateVAT } from "../src/utils/vat";
@@ -15,10 +16,6 @@ import {
   Modal,
 } from "react-native";
 import { getToken, getSelectedCompany } from "../src/utils/session";
-
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.maltechenterprises.com/api";
 
 export default function Purchases() {
   const [selectedCompany, setSelectedCompany] = useState(null);
