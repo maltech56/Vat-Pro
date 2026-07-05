@@ -10,6 +10,7 @@ const {
   getFilingPackPdf,
   getFilingPackSummary,
   updateFilingStatus,
+  lockFiling,
   deleteFiling,
 } = require("../controllers/vatFilingController");
 
@@ -25,6 +26,11 @@ router.get("/:filingId/pdf", authMiddleware, getFilingPdf);
 router.get("/:filingId", authMiddleware, getFilingById);
 
 router.patch("/:filingId/status", authMiddleware, updateFilingStatus);
+router.patch(
+  "/:filingId/lock",
+  authMiddleware,
+  lockFiling
+);
 router.delete("/:filingId", authMiddleware, deleteFiling);
 
 module.exports = router;

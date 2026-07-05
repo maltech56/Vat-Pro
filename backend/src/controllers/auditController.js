@@ -1,6 +1,11 @@
 const pool = require("../config/db");
 
 exports.getAuditDashboard = async (req, res) => {
+
+  console.log("===== AUDIT CONTROLLER ENTERED =====");
+  console.log("USER:", req.user?.id);
+  console.log("COMPANY:", req.params.companyId);
+  console.log("STEP 1");
   try {
     const { companyId } = req.params;
 
@@ -18,6 +23,11 @@ exports.getAuditDashboard = async (req, res) => {
       WHERE company_id = $1
       `,
       [companyId]
+    );
+
+    console.log(
+      "STEP 2: totalDocsResult =",
+      totalDocsResult.rows
     );
 
     const totalDocuments = Number(totalDocsResult.rows[0].count || 0);
@@ -51,6 +61,21 @@ exports.getAuditDashboard = async (req, res) => {
       transactionsResult.rows[0].count || 0
     );
 
+    const validTransactions = totalTransactions;
+
+    let transactionCoverage = 0;
+
+    if (totalTransactions > 0) {
+      transactionCoverage = Math.round(
+        (validTransactions / totalTransactions) * 100
+      );
+    }
+
+    console.log(
+      "STEP 3: totalTransactions =",
+      totalTransactions
+    );
+
     // 🔹 4. Transactions WITH documents
     const linkedTransactionsResult = await pool.query(
       `
@@ -65,6 +90,11 @@ exports.getAuditDashboard = async (req, res) => {
 
     const linkedTransactions = Number(
       linkedTransactionsResult.rows[0].count || 0
+    );
+
+    console.log(
+      "STEP 5: linkedTransactions =",
+      linkedTransactions
     );
 
     // 🔹 5. Missing document count
@@ -98,10 +128,30 @@ exports.getAuditDashboard = async (req, res) => {
       [companyId]
     );
 
+    console.log(
+      "STEP 6: filings count =",
+      filingsResult.rows.length
+    );
+
+    console.log("STEP 7: RETURNING RESPONSE");
+
+    console.log({
+      totalTransactions,
+      validTransactions,
+      linkedTransactions,
+      totalDocuments,
+      missingDocuments,
+      unlinkedDocuments,
+      auditScore,
+      riskLevel,
+    });
+
     // 🔹 9. Response
     return res.json({
       auditScore,
       riskLevel,
+      transactionCoverage,
+      validTransactions,
       stats: {
         totalTransactions,
         linkedTransactions,
@@ -112,7 +162,12 @@ exports.getAuditDashboard = async (req, res) => {
       filings: filingsResult.rows,
     });
   } catch (error) {
-    console.error("Audit dashboard error:", error);
+
+    console.log("===== AUDIT ERROR =====");
+    console.log(error);
+    console.log(error.message);
+    console.log(error.stack);
+
     return res.status(500).json({
       error: "Failed to load audit dashboard",
       details: error.message,
