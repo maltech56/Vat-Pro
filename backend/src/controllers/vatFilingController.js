@@ -1331,6 +1331,57 @@ exports.lockFiling = async (req, res) => {
   try {
     const { filingId } = req.params;
 
+    const packData = await buildFilingPackData(filingId);
+
+    const auditScore = Number(
+      packData.audit?.auditScore || 0
+    );
+
+    const missingDocumentCount = Number(
+      packData.stats?.missingDocumentCount || 0
+    );
+
+    const unlinkedDocumentCount = Number(
+      packData.stats?.unlinkedDocumentCount || 0
+    );
+
+    const transactionCount = Number(
+      packData.stats?.transactionCount || 0
+    );
+
+    console.log("===== AUDIT LOCK CHECK =====");
+    console.log({
+      filingId,
+      auditScore,
+      missingDocumentCount,
+      unlinkedDocumentCount,
+      transactionCount,
+    });
+
+    if (auditScore < 70) {
+      return res.status(400).json({
+        error:
+          "Filing cannot be locked because audit readiness is below 70%.",
+        auditScore,
+      });
+    }
+
+    if (missingDocumentCount > 0) {
+      return res.status(400).json({
+        error:
+          "Filing cannot be locked because supporting documents are missing.",
+        missingDocumentCount,
+      });
+    }
+
+    if (unlinkedDocumentCount > 0) {
+      return res.status(400).json({
+        error:
+          "Filing cannot be locked because documents remain unlinked.",
+        unlinkedDocumentCount,
+      });
+    }
+
     const existing = await pool.query(
       `
       SELECT id, status
@@ -1436,22 +1487,77 @@ exports.updateFilingStatus = async (req, res) => {
       });
     }
 
-    // 🔒 AUDIT LOCK RULE (NEW)
+    // 🔒 AUDIT SUBMISSION VALIDATION
     if (status === "submitted") {
       const packData = await buildFilingPackData(filingId);
 
-      if (packData.audit.auditScore < 70) {
+      const auditScore = Number(
+        packData.audit?.auditScore || 0
+      );
+
+      const missingDocumentCount = Number(
+        packData.stats?.missingDocumentCount || 0
+      );
+
+      const unlinkedDocumentCount = Number(
+        packData.stats?.unlinkedDocumentCount || 0
+      );
+
+      const transactionCount = Number(
+        packData.stats?.transactionCount || 0
+      );
+
+      console.log("===== AUDIT SUBMISSION CHECK =====");
+      console.log({
+        filingId,
+        auditScore,
+        missingDocumentCount,
+        unlinkedDocumentCount,
+        transactionCount,
+      });
+
+      if (transactionCount === 0) {
         return res.status(400).json({
           error:
-            "This filing cannot be submitted because the audit readiness score is below 70%. Link supporting documents before submitting.",
-          auditScore: packData.audit.auditScore,
-          missingDocumentCount: packData.stats.missingDocumentCount,
+            "Filing cannot be locked because no transactions exist.",
         });
       }
 
-      // Filing passes audit validation and remains submitted
+      if (transactionCount === 0) {
+        return res.status(400).json({
+          error:
+            "Cannot submit filing because no transactions exist.",
+        });
+      }
+
+      if (auditScore < 70) {
+        return res.status(400).json({
+          error:
+            "Audit readiness score must be at least 70%.",
+          auditScore,
+        });
+      }
+
+      if (missingDocumentCount > 0) {
+        return res.status(400).json({
+          error:
+            "Missing supporting documents detected.",
+          missingDocumentCount,
+        });
+      }
+
+      if (unlinkedDocumentCount > 0) {
+        return res.status(400).json({
+          error:
+            "Unlinked documents detected.",
+          unlinkedDocumentCount,
+        });
+      }
+
+      // Keep submitted status.
       status = "submitted";
     }
+
     const result = await pool.query(
       `
       UPDATE vat_filings

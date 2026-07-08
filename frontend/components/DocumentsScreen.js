@@ -320,7 +320,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch audit readiness");
@@ -499,7 +499,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to unlink document");
@@ -584,7 +584,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         body: formData,
       });
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Upload failed");
@@ -621,7 +621,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
         },
       });
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to delete document");

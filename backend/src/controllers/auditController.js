@@ -146,11 +146,50 @@ exports.getAuditDashboard = async (req, res) => {
       riskLevel,
     });
 
+    const blockers = [];
+
+    if (missingDocuments > 0) {
+      blockers.push({
+        severity: "high",
+        title: "Missing Supporting Documents",
+        message: `${missingDocuments} transaction(s) do not have supporting documents.`,
+        action: "missing-documents",
+      });
+    }
+
+    if (unlinkedDocuments > 0) {
+      blockers.push({
+        severity: "medium",
+        title: "Unlinked Documents",
+        message: `${unlinkedDocuments} uploaded document(s) are not linked to transactions.`,
+        action: "unlinked-documents",
+      });
+    }
+
+    if (auditScore < 80) {
+      blockers.push({
+        severity: "medium",
+        title: "Audit Score Below Filing Threshold",
+        message: `Current audit score is ${auditScore}%. Improve document support before submitting VAT returns.`,
+        action: "audit",
+      });
+    }
+
+    if (blockers.length === 0) {
+      blockers.push({
+        severity: "success",
+        title: "Audit Ready",
+        message: "No audit blockers detected.",
+        action: null,
+      });
+    }
+
     // 🔹 9. Response
     return res.json({
       auditScore,
       riskLevel,
       transactionCoverage,
+      blockers,
       validTransactions,
       stats: {
         totalTransactions,

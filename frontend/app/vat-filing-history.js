@@ -108,7 +108,7 @@ export default function VatFilingHistory() {
         },
       });
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch filings");
@@ -250,7 +250,7 @@ export default function VatFilingHistory() {
         },
       });
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch filing details");
@@ -321,7 +321,7 @@ export default function VatFilingHistory() {
                 }
               );
 
-              const data = response;
+              const data = await response.json();
 
               if (!response.ok) {
                 if (data.auditScore !== undefined) {
@@ -365,6 +365,42 @@ export default function VatFilingHistory() {
     );
   };
 
+  const handleLockFiling = async (filingId) => {
+    try {
+      const token = getToken();
+
+      const response = await fetch(
+        `${API_BASE}/vat-filings/${filingId}/lock`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to lock filing");
+      }
+
+      Alert.alert("Success", "Filing locked.");
+
+      await fetchFilings({
+        companyId: selectedCompany.id,
+        page: currentPage,
+        limit: pageSize,
+        search: searchTerm,
+        sortField,
+        sortDirection,
+      });
+
+    } catch (err) {
+      Alert.alert("Error", err.message);
+    }
+  };
+
   const handleDelete = (filingId) => {
     Alert.alert(
       "Delete Filing",
@@ -388,7 +424,7 @@ export default function VatFilingHistory() {
                 }
               );
 
-              const data = response;
+              const data = await response.json();
 
               if (!response.ok) {
                 throw new Error(data.error || "Delete failed");
@@ -1104,30 +1140,56 @@ export default function VatFilingHistory() {
                           </Text>
                         </TouchableOpacity>
 
-                        {f.status === "draft" || !f.status ? (<TouchableOpacity
-                          style={[
-                            styles.actionGreen,
-                            auditScores[f.id] &&
-                            auditScores[f.id].auditScore < 80 &&
-                            styles.buttonDisabled
-                          ]}
-                          onPress={() => handleProtectedSubmit(f.id)}
-                        >
-                          <Text style={styles.actionText}>
-                            {auditScores[f.id] && auditScores[f.id].auditScore < 80
-                              ? "Blocked"
-                              : "Submit"}
-                          </Text>
-                        </TouchableOpacity>
+                        {canSubmitFiling(f) ? (
+                          <TouchableOpacity
+                            style={[
+                              styles.actionGreen,
+                              auditScores[f.id] &&
+                              auditScores[f.id].auditScore < 80 &&
+                              styles.buttonDisabled,
+                            ]}
+                            onPress={() => handleProtectedSubmit(f.id)}
+                            disabled={
+                              auditScores[f.id] &&
+                              auditScores[f.id].auditScore < 80
+                            }
+                          >
+                            <Text style={styles.actionText}>
+                              {auditScores[f.id] &&
+                                auditScores[f.id].auditScore < 80
+                                ? "Blocked"
+                                : "Submit"}
+                            </Text>
+                          </TouchableOpacity>
+                        ) : canLockFiling(f) ? (
+                          <TouchableOpacity
+                            style={styles.actionOrange}
+                            onPress={() =>
+                              Alert.alert(
+                                "Lock Filing",
+                                "Once a filing is locked it cannot be edited. Do you want to continue?",
+                                [
+                                  {
+                                    text: "Cancel",
+                                    style: "cancel",
+                                  },
+                                  {
+                                    text: "Lock",
+                                    onPress: () => handleLockFiling(f.id),
+                                  },
+                                ]
+                              )
+                            }
+                          >
+                            <Text style={styles.actionText}>Lock</Text>
+                          </TouchableOpacity>
                         ) : (
                           <View style={styles.actionGray}>
-                            <Text style={styles.actionText}>
-                              {f.status === "locked" ? "Locked" : "Submitted"}
-                            </Text>
+                            <Text style={styles.actionText}>Locked</Text>
                           </View>
                         )}
 
-                        {f.status === "draft" || !f.status ? (
+                        {canDeleteFiling(f) ? (
                           <TouchableOpacity
                             style={styles.actionRed}
                             onPress={() => handleDelete(f.id)}

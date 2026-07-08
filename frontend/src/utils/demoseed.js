@@ -22,7 +22,7 @@ export const seedDemoDataIfNeeded = async () => {
     },
   });
 
-  const data = response;
+  const data = await response.json();
 
   if (!response.ok) {
     throw new Error(data.error || "Failed to create demo data");

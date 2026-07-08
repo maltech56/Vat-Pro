@@ -184,7 +184,7 @@ export default function VatFilingScreen({ onNavigate }) {
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch VAT summary");
@@ -275,7 +275,7 @@ export default function VatFilingScreen({ onNavigate }) {
         }
       );
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch audit readiness");

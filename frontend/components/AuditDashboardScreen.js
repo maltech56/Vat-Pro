@@ -13,7 +13,10 @@ import { getToken } from "../src/utils/session";
 import { useCompany } from "../context/CompanyContext";
 import { API_BASE } from "../src/api/config";
 
-export default function AuditDashboardScreen() {
+export default function AuditDashboardScreen({
+  pageOptions,
+  onNavigate,
+}) {
   const { selectedCompany, companyReady } = useCompany();
 
   const [loading, setLoading] = useState(true);
@@ -53,7 +56,7 @@ export default function AuditDashboardScreen() {
 
       console.log("AUDIT DASHBOARD STATUS:", response.status);
 
-      const data = response;
+      const data = await response.json();
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -114,6 +117,35 @@ export default function AuditDashboardScreen() {
     return "High-risk status. Missing document support should be resolved before submission.";
   };
 
+  const handleResolveBlocker = (blocker) => {
+    if (typeof onNavigate !== "function") {
+      Alert.alert(
+        "Navigation Error",
+        "Navigation is currently unavailable."
+      );
+      return;
+    }
+
+    switch (blocker.action) {
+      case "missing-documents":
+        onNavigate("Documents");
+        break;
+
+      case "unlinked-documents":
+        onNavigate("Documents", {
+          focus: "unlinked",
+        });
+        break;
+
+      case "audit":
+        onNavigate("Documents");
+        break;
+
+      default:
+        break;
+    }
+  };
+
   if (!companyReady || loading) {
     return (
       <View style={styles.container}>
@@ -147,6 +179,8 @@ export default function AuditDashboardScreen() {
 
   const stats = auditData.stats || {};
   const filings = auditData.filings || [];
+
+
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -222,6 +256,43 @@ export default function AuditDashboardScreen() {
         ) : null}
       </View>
 
+      <View style={styles.alertCard}>
+        <Text style={styles.sectionTitle}>Audit Blockers</Text>
+
+        {(auditData.blockers || []).map((blocker, index) => (
+          <View
+            key={index}
+            style={[
+              styles.blockerRow,
+              blocker.severity === "high"
+                ? styles.blockerHigh
+                : blocker.severity === "medium"
+                  ? styles.blockerMedium
+                  : styles.blockerSuccess,
+            ]}
+          >
+            <Text style={styles.blockerTitle}>
+              {blocker.title}
+            </Text>
+
+            <Text style={styles.blockerMessage}>
+              {blocker.message}
+            </Text>
+
+            {blocker.action && (
+              <TouchableOpacity
+                style={styles.resolveButton}
+                onPress={() => handleResolveBlocker(blocker)}
+              >
+                <Text style={styles.resolveButtonText}>
+                  Resolve
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
+      </View>
+
       <View style={styles.tableCard}>
         <Text style={styles.sectionTitle}>Recent Filing Readiness</Text>
 
@@ -256,6 +327,42 @@ const formatDate = (value) => {
 };
 
 const styles = StyleSheet.create({
+
+  blockerRow: {
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 10,
+  },
+
+  blockerHigh: {
+    backgroundColor: "#FEE2E2",
+    borderLeftWidth: 5,
+    borderLeftColor: "#DC2626",
+  },
+
+  blockerMedium: {
+    backgroundColor: "#FEF3C7",
+    borderLeftWidth: 5,
+    borderLeftColor: "#F59E0B",
+  },
+
+  blockerSuccess: {
+    backgroundColor: "#DCFCE7",
+    borderLeftWidth: 5,
+    borderLeftColor: "#16A34A",
+  },
+
+  blockerTitle: {
+    fontWeight: "700",
+    fontSize: 15,
+    marginBottom: 4,
+  },
+
+  blockerMessage: {
+    color: "#475569",
+    lineHeight: 20,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#F5F7FB",
@@ -425,5 +532,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6B7280",
     marginTop: 8,
+  },
+  blockerRow: {
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 10,
+  },
+
+  blockerHigh: {
+    backgroundColor: "#FEE2E2",
+    borderLeftWidth: 5,
+    borderLeftColor: "#DC2626",
+  },
+
+  blockerMedium: {
+    backgroundColor: "#FEF3C7",
+    borderLeftWidth: 5,
+    borderLeftColor: "#F59E0B",
+  },
+
+  blockerSuccess: {
+    backgroundColor: "#DCFCE7",
+    borderLeftWidth: 5,
+    borderLeftColor: "#16A34A",
+  },
+
+  blockerTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 4,
+    color: "#1E293B",
+  },
+
+  blockerMessage: {
+    fontSize: 14,
+    color: "#475569",
+    lineHeight: 20,
+  },
+
+  resolveButton: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    backgroundColor: "#2563EB",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+
+  resolveButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 13,
   },
 });

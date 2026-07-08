@@ -1119,7 +1119,10 @@ export default function Dashboard() {
         {activePage === "Documents" && <DocumentsScreen pageOptions={pageOptions} />}
         {activePage === "Reports" && <ReportsScreen />}
         {activePage === "Audit Dashboard" && (
-          <AuditDashboardScreen pageOptions={pageOptions} />
+          <AuditDashboardScreen
+            pageOptions={pageOptions}
+            onNavigate={handleSelectPage}
+          />
         )}
         {activePage === "VAT Returns" && <VatReturnsScreen />}
         {activePage === "VAT Filing" && (
