@@ -328,41 +328,6 @@ const formatDate = (value) => {
 
 const styles = StyleSheet.create({
 
-  blockerRow: {
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 10,
-  },
-
-  blockerHigh: {
-    backgroundColor: "#FEE2E2",
-    borderLeftWidth: 5,
-    borderLeftColor: "#DC2626",
-  },
-
-  blockerMedium: {
-    backgroundColor: "#FEF3C7",
-    borderLeftWidth: 5,
-    borderLeftColor: "#F59E0B",
-  },
-
-  blockerSuccess: {
-    backgroundColor: "#DCFCE7",
-    borderLeftWidth: 5,
-    borderLeftColor: "#16A34A",
-  },
-
-  blockerTitle: {
-    fontWeight: "700",
-    fontSize: 15,
-    marginBottom: 4,
-  },
-
-  blockerMessage: {
-    color: "#475569",
-    lineHeight: 20,
-  },
-
   container: {
     flex: 1,
     backgroundColor: "#F5F7FB",
