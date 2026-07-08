@@ -15,7 +15,7 @@ import {
   View,
 } from "react-native";
 
-import { getSelectedCompany, getToken } from "../src/utils/session";
+import { getToken } from "../src/utils/session";
 
 const formatCurrency = (value) => {
   const amount = Number(value || 0);

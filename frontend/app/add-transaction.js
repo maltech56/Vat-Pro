@@ -1,6 +1,5 @@
 import { API_BASE } from "../src/api/config";
-import React, { useState, useEffect } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import React, { useState } from "react";
 import { calculateVAT } from "../src/utils/vat";
 import {
   View,
@@ -83,7 +82,7 @@ export default function AddTransaction({ defaultType = "sale", onSaved }) {
       let data;
       try {
         data = JSON.parse(rawText);
-      } catch (parseError) {
+      } catch (_parseError) {
         throw new Error(`Server returned non-JSON response: ${rawText}`);
       }
 

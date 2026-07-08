@@ -12,7 +12,7 @@ export const handleApiAuthError = async (response) => {
       if (data?.error || data?.message) {
         message = data.error || data.message;
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore parse error and use default message
     }
 
@@ -29,7 +29,7 @@ export const handleApiAuthError = async (response) => {
       if (data?.error || data?.message) {
         message = data.error || data.message;
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore parse error and use default message
     }
 

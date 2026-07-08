@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import CompanyBrandingSettings from "./CompanyBrandingSettings";
-import { Linking } from "react-native";
 import {
   View,
   Text,
@@ -10,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import {
   getUser,

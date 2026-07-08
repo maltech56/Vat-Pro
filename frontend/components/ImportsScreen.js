@@ -15,7 +15,6 @@ import { getToken } from "../src/utils/session";
 import { formatCurrency } from "../src/utils/formatters";
 import {
   pickImportDocument,
-  parseImportedAsset,
 } from "../src/utils/importParsers";
 import { API_BASE } from "../src/api/config";
 

@@ -38,8 +38,6 @@ export default function VatFilingScreen({ onNavigate }) {
   const [positionTitle, setPositionTitle] = useState("");
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
-  const [auditScore, setAuditScore] = useState(0);
-  const [unlinkedTransactions, setUnlinkedTransactions] = useState(0);
 
   useEffect(() => {
     if (!companyReady) return;

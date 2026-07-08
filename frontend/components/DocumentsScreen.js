@@ -156,7 +156,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [linkingId, setLinkingId] = useState(null);
-  const [userRole, setUserRole] = useState("admin");
+  const [userRole] = useState("admin");
 
   // minimum document linking UI
   const [showLinkModal, setShowLinkModal] = useState(false);

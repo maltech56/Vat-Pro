@@ -2,8 +2,6 @@ import { API_BASE } from "../src/api/config";
 import React, { useEffect, useMemo, useState } from "react";
 import AddTransaction from "./add-transaction";
 import { calculateVAT } from "../src/utils/vat";
-import PurchaseForm from "../components/purchaseForms";
-import { Picker } from "@react-native-picker/picker";
 import {
   View,
   Text,
