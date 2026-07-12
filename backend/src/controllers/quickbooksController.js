@@ -206,8 +206,12 @@ exports.quickBooksCallback = async (req, res) => {
         console.log("Realm ID:", realmId);
         console.log("====================================");
 
+        const frontendUrl =
+            process.env.FRONTEND_URL ||
+            "https://vat-pro-frontend.onrender.com";
+
         return res.redirect(
-            "https://vat-pro-frontend.onrender.com/dashboard?quickbooks=connected"
+            `${frontendUrl}/dashboard?quickbooks=connected&companyId=${companyId}`
         );
 
 
@@ -627,45 +631,45 @@ exports.importQuickBooksVendors = async (req, res) => {
 };
 
 exports.importQuickBooksInvoices = async (req, res) => {
-  try {
+    try {
 
-    const { companyId } = req.params;
+        const { companyId } = req.params;
 
-    const { realm_id, access_token } =
-      await getValidAccessToken(companyId);
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
 
-    const response = await fetch(
-      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: "application/json",
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    const invoices =
-      data?.QueryResponse?.Invoice || [];
-
-    let imported = 0;
-
-    for (const invoice of invoices) {
-
-      const total =
-        Number(invoice.TotalAmt || 0);
-
-      const vat =
-        Number(
-          invoice.TxnTaxDetail?.TotalTax || 0
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
         );
 
-      const subtotal =
-        total - vat;
+        const data = await response.json();
 
-      await pool.query(
-        `
+        const invoices =
+            data?.QueryResponse?.Invoice || [];
+
+        let imported = 0;
+
+        for (const invoice of invoices) {
+
+            const total =
+                Number(invoice.TotalAmt || 0);
+
+            const vat =
+                Number(
+                    invoice.TxnTaxDetail?.TotalTax || 0
+                );
+
+            const subtotal =
+                total - vat;
+
+            await pool.query(
+                `
         INSERT INTO vat_transactions
         (
           company_id,
@@ -692,82 +696,82 @@ exports.importQuickBooksInvoices = async (req, res) => {
         )
         DO NOTHING
         `,
-        [
-          companyId,
-          "QUICKBOOKS",
-          invoice.Id,
-          "SALE",
-          invoice.DocNumber,
-          invoice.TxnDate,
-          invoice.CustomerRef?.name || null,
-          subtotal,
-          vat,
-          total,
-        ]
-      );
+                [
+                    companyId,
+                    "QUICKBOOKS",
+                    invoice.Id,
+                    "SALE",
+                    invoice.DocNumber,
+                    invoice.TxnDate,
+                    invoice.CustomerRef?.name || null,
+                    subtotal,
+                    vat,
+                    total,
+                ]
+            );
 
-      imported++;
+            imported++;
+        }
+
+        return res.json({
+            success: true,
+            imported,
+        });
+
+    } catch (error) {
+
+        console.error(
+            "QB INVOICE IMPORT ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            error: "Failed to import invoices",
+            message: error.message,
+        });
     }
-
-    return res.json({
-      success: true,
-      imported,
-    });
-
-  } catch (error) {
-
-    console.error(
-      "QB INVOICE IMPORT ERROR:",
-      error
-    );
-
-    return res.status(500).json({
-      error: "Failed to import invoices",
-      message: error.message,
-    });
-  }
 };
 
 exports.importQuickBooksBills = async (req, res) => {
-  try {
+    try {
 
-    const { companyId } = req.params;
+        const { companyId } = req.params;
 
-    const { realm_id, access_token } =
-      await getValidAccessToken(companyId);
+        const { realm_id, access_token } =
+            await getValidAccessToken(companyId);
 
-    const response = await fetch(
-      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: "application/json",
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    const bills =
-      data?.QueryResponse?.Bill || [];
-
-    let imported = 0;
-
-    for (const bill of bills) {
-
-      const total =
-        Number(bill.TotalAmt || 0);
-
-      const vat =
-        Number(
-          bill.TxnTaxDetail?.TotalTax || 0
+        const response = await fetch(
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    Accept: "application/json",
+                },
+            }
         );
 
-      const subtotal =
-        total - vat;
+        const data = await response.json();
 
-      await pool.query(
-        `
+        const bills =
+            data?.QueryResponse?.Bill || [];
+
+        let imported = 0;
+
+        for (const bill of bills) {
+
+            const total =
+                Number(bill.TotalAmt || 0);
+
+            const vat =
+                Number(
+                    bill.TxnTaxDetail?.TotalTax || 0
+                );
+
+            const subtotal =
+                total - vat;
+
+            await pool.query(
+                `
         INSERT INTO vat_transactions
         (
           company_id,
@@ -794,38 +798,38 @@ exports.importQuickBooksBills = async (req, res) => {
         )
         DO NOTHING
         `,
-        [
-          companyId,
-          "QUICKBOOKS",
-          bill.Id,
-          "PURCHASE",
-          bill.DocNumber,
-          bill.TxnDate,
-          bill.VendorRef?.name || null,
-          subtotal,
-          vat,
-          total,
-        ]
-      );
+                [
+                    companyId,
+                    "QUICKBOOKS",
+                    bill.Id,
+                    "PURCHASE",
+                    bill.DocNumber,
+                    bill.TxnDate,
+                    bill.VendorRef?.name || null,
+                    subtotal,
+                    vat,
+                    total,
+                ]
+            );
 
-      imported++;
+            imported++;
+        }
+
+        return res.json({
+            success: true,
+            imported,
+        });
+
+    } catch (error) {
+
+        console.error(
+            "QB BILL IMPORT ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            error: "Failed to import bills",
+            message: error.message,
+        });
     }
-
-    return res.json({
-      success: true,
-      imported,
-    });
-
-  } catch (error) {
-
-    console.error(
-      "QB BILL IMPORT ERROR:",
-      error
-    );
-
-    return res.status(500).json({
-      error: "Failed to import bills",
-      message: error.message,
-    });
-  }
 };

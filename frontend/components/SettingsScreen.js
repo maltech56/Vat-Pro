@@ -471,25 +471,55 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
     }
   };
 
-  const handleConnectQuickBooks = () => {
+  const handleConnectQuickBooks = async () => {
     if (!selectedCompany?.id) {
       Alert.alert("Error", "Please select a company first.");
       return;
     }
 
-    const url = `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`;
+    try {
+      const token = getToken();
 
-    Linking.openURL(url);
+      if (!token) {
+        Alert.alert("Error", "Please log in again.");
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.authUri) {
+        throw new Error("QuickBooks authorization URL was not returned.");
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || "Failed to connect QuickBooks");
+      }
+
+      if (typeof window !== "undefined") {
+        window.location.href = data.authUri;
+      } else {
+        await Linking.openURL(data.authUri);
+      }
+    } catch (error) {
+      console.error("QuickBooks connection failed:", error);
+
+      Alert.alert(
+        "QuickBooks",
+        error.message || "Unable to start QuickBooks connection."
+      );
+    }
   };
-
-  if (loading) {
-    return (
-      <View style={styles.loaderWrap}>
-        <ActivityIndicator size="large" color="#0f172a" />
-        <Text style={styles.loaderText}>Loading settings...</Text>
-      </View>
-    );
-  }
 
   const syncCustomers = async () => {
     try {
