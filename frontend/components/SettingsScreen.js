@@ -18,6 +18,7 @@ import {
   clearSession,
 } from "../src/utils/session";
 import { API_BASE } from "../src/api/config";
+import { apiFetch } from "../src/utils/apiFetch";
 
 const formatRole = (role) => {
   if (!role) return "";
@@ -146,45 +147,33 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
         return;
       }
 
-      const response = await fetch(
-        `${API_BASE}/settings/company/${company.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const data = await apiFetch(
+        `/settings/company/${company.id}`
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to load settings");
-      }
 
       if (data) {
         setCompanyForm({
-          companyName: data.companyName || "",
-          taxId: data.tin || "",
-          vatRegistrationNumber: data.vatNumber || "",
-          businessEmail: data.email || "",
-          businessPhone: data.phone || "",
-          address: data.address || "",
+          companyName: data.company?.name || "",
+          taxId: data.settings?.taxId || "",
+          vatRegistrationNumber: data.settings?.vatNumber || "",
+          businessEmail: data.company?.email || "",
+          businessPhone: data.company?.phone || "",
+          address: data.company?.address || "",
         });
 
         setVatForm({
-          defaultVatRate: "10",
-          filingFrequency: data.filingFrequency || "Monthly",
-          currency: data.currency || "BSD",
-          taxYearStart: data.taxYearStart || "January",
-          vatDueDay: String(data.vatDueDay || 28),
+          defaultVatRate: String(data.settings?.defaultVatRate || 10),
+          filingFrequency: data.settings?.filingFrequency || "Monthly",
+          currency: data.settings?.currency || "BSD",
+          taxYearStart: data.settings?.taxYearStart || "January",
+          vatDueDay: String(data.settings?.vatDueDay || 28),
         });
 
         setAppForm({
-          dateFormat: data.dateFormat || "YYYY-MM-DD",
-          rowsPerPage: String(data.rowsPerPage || 10),
-          defaultReportTab: data.defaultReportTab || "Summary",
+          dateFormat: data.settings?.dateFormat || "YYYY-MM-DD",
+          rowsPerPage: String(data.settings?.rowsPerPage || 10),
+          defaultReportTab: data.settings?.defaultReportTab || "Summary",
         });
-
       }
     } catch (error) {
       console.error("fetchSettings error:", error);
@@ -196,24 +185,13 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
 
   const loadQuickBooksStatus = async () => {
     try {
-      const token = getToken();
-
-      if (!token || !selectedCompany?.id) {
+      if (!selectedCompany?.id) {
         return;
       }
 
-      const response = await fetch(
-        `${API_BASE}/quickbooks/status/${selectedCompany.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const data = await apiFetch(
+        `/quickbooks/status/${selectedCompany.id}`
       );
-
-      const data = await response.json();
-
-      console.log("QB STATUS:", data);
 
       setQuickBooksConnected(
         data.connected === true
@@ -227,7 +205,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
   };
 
   const handleSaveSettings = async () => {
-    try {
+      try {
       const token = getToken();
       const company = selectedCompany;
 
@@ -260,17 +238,17 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       const currency = vatForm.currency.trim().toUpperCase();
 
       if (!companyName) {
-        Alert.alert("Validation Error", "Company name is required.");
+      Alert.alert("Validation Error", "Company name is required.");
         return;
       }
 
       if (!taxId) {
-        Alert.alert("Validation Error", "Tax ID / TIN is required.");
+      Alert.alert("Validation Error", "Tax ID / TIN is required.");
         return;
       }
 
       if (!vatNumber) {
-        Alert.alert("Validation Error", "VAT registration number is required.");
+       Alert.alert("Validation Error", "VAT registration number is required.");
         return;
       }
 
@@ -313,62 +291,40 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       }
 
       const rowsPerPage = Number(appForm.rowsPerPage);
-
       if (!Number.isInteger(rowsPerPage) || rowsPerPage < 5 || rowsPerPage > 100) {
         Alert.alert("Validation Error", "Rows per page must be a whole number between 5 and 100.");
         return;
       }
 
-      const hasChanges =
-        companyName !== companyForm.companyName.trim() ||
-        businessEmail !== (companyForm.businessEmail || "") ||
-        businessPhone !== (companyForm.businessPhone || "") ||
-        taxId !== (companyForm.taxId || "") ||
-        vatNumber !== (companyForm.vatRegistrationNumber || "") ||
-        vatDueDay !== Number(vatForm.vatDueDay) ||
-        rowsPerPage !== Number(appForm.rowsPerPage);
-
-      if (!hasChanges) {
-        Alert.alert("No Changes", "No updates were made.");
-        return;
-      }
-
       setSaving(true);
-
-      const response = await fetch(
-        `${API_BASE}/settings/company/${company.id}`,
+      const data = await apiFetch(
+        `/settings/company/${company.id}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
           body: JSON.stringify({
-            companyName: companyForm.companyName.trim(),
+            // Company
+            name: companyForm.companyName.trim(),
             email: companyForm.businessEmail.trim(),
             phone: companyForm.businessPhone.trim(),
             address: companyForm.address.trim(),
-            tin: companyForm.taxId.trim(),
+
+            // Tax
+            taxId: companyForm.taxId.trim(),
             vatNumber: companyForm.vatRegistrationNumber.trim(),
 
+            // VAT
             filingFrequency,
             currency,
             taxYearStart: vatForm.taxYearStart,
+            vatDueDay,
 
+            // App Preferences
             dateFormat: appForm.dateFormat,
             rowsPerPage,
             defaultReportTab: appForm.defaultReportTab,
-
-            vatDueDay,
           }),
         }
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to save settings");
-      }
 
       await fetchSettings();
       Alert.alert("Success", "Settings saved successfully.");
@@ -419,23 +375,13 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
 
       setChangingPassword(true);
 
-      const response = await fetch(`${API_BASE}/auth/change-password`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+      const data = await apiFetch("/auth/change-password", {
+        method: "POST",
         body: JSON.stringify({
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,
         }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to change password");
-      }
 
       Alert.alert("Success", "Password changed successfully.");
 
@@ -485,25 +431,19 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
         return;
       }
 
-      const response = await fetch(
-        `${API_BASE}/quickbooks/connect?companyId=${selectedCompany.id}`,
+      const data = await apiFetch(
+        `/quickbooks/connect?companyId=${selectedCompany.id}`,
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
         }
       );
 
-      const data = await response.json();
-
-      if (!data.authUri) {
-        throw new Error("QuickBooks authorization URL was not returned.");
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || data.message || "Failed to connect QuickBooks");
+      if (!data?.authUri) {
+        throw new Error(
+          data?.error ||
+          data?.message ||
+          "QuickBooks authorization URL was not returned."
+        );
       }
 
       if (typeof window !== "undefined") {
@@ -525,19 +465,12 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
     try {
       setSyncing(true);
 
-      const token = getToken();
-
-      const response = await fetch(
-        `${API_BASE}/quickbooks/import-customers/${selectedCompany.id}`,
+      const data = await apiFetch(
+        `/quickbooks/import-customers/${selectedCompany.id}`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         }
       );
-
-      const data = await response.json();
 
       setSyncResults((prev) => ({
         ...prev,
@@ -551,7 +484,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
 
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Customer sync failed");
+      Alert.alert("Error", error.message || "Customer sync failed");
     } finally {
       setSyncing(false);
     }

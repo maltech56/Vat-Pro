@@ -49,34 +49,57 @@ exports.getSettings = async (req, res) => {
         address: company.address,
       },
       settings: {
-        defaultVatRate: 10,
-        filingFrequency: (settings.filing_frequency || "monthly").toLowerCase(),
+        defaultVatRate: Number(settings.default_vat_rate ?? 10),
+
+        filingFrequency:
+          (settings.filing_frequency || "monthly").toLowerCase(),
+
         vatDueDay: Number(settings.vat_due_day ?? 28),
+
         currency: settings.currency || "BSD",
+
         taxId: settings.tax_id || "",
+
+        vatNumber: settings.vat_registration_number || "",
+
+        taxYearStart: settings.tax_year_start || "January",
+
+        dateFormat: settings.date_format || "YYYY-MM-DD",
+
+        rowsPerPage: Number(settings.rows_per_page ?? 10),
+
+        defaultReportTab: settings.default_report_tab || "Summary",
+
         autoLockSubmittedFilings:
           settings.auto_lock_submitted_filings ?? true,
+
         requirePeriodConfirmation:
           settings.require_period_confirmation ?? true,
+
         updatedAt: settings.updated_at || null,
 
-        // 🔥 ADD THESE (THIS IS WHAT YOUR DASHBOARD NEEDS)
         primaryColor: settings.primary_color || "#0F3D91",
+
         logoUrl: settings.logo_url || "",
+
         homeScreenTitle: settings.home_screen_title || "",
+
         homeScreenSubtitle: settings.home_screen_subtitle || "",
+
         defaultHomeTab: settings.default_home_tab || "dashboard",
-        onboardingComplete: settings.onboarding_complete ?? false,
+
+        onboardingComplete:
+          settings.onboarding_complete ?? false,
       }
     });
-      } catch (error) {
-        console.error("Error fetching company settings:", error);
-        return res.status(500).json({
-          error: "Failed to fetch settings",
-          details: error.message,
-        });
-      }
-    };
+  } catch (error) {
+    console.error("Error fetching company settings:", error);
+    return res.status(500).json({
+      error: "Failed to fetch settings",
+      details: error.message,
+    });
+  }
+};
 
 exports.updateSettings = async (req, res) => {
   const { companyId } = req.params;
@@ -90,6 +113,7 @@ exports.updateSettings = async (req, res) => {
     vatDueDay,
     currency,
     taxId,
+    vatNumber,
     autoLockSubmittedFilings,
     requirePeriodConfirmation,
 
@@ -205,6 +229,7 @@ exports.updateSettings = async (req, res) => {
     vat_due_day,
     currency,
     tax_id,
+    vat_registration_number,
     auto_lock_submitted_filings,
     require_period_confirmation,
     onboarding_complete,
@@ -215,7 +240,7 @@ exports.updateSettings = async (req, res) => {
     default_home_tab,
     updated_at
   )
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW())
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW())
   ON CONFLICT (company_id)
   DO UPDATE SET
     default_vat_rate = 10,
@@ -223,6 +248,7 @@ exports.updateSettings = async (req, res) => {
     vat_due_day = EXCLUDED.vat_due_day,
     currency = EXCLUDED.currency,
     tax_id = EXCLUDED.tax_id,
+    vat_registration_number = EXCLUDED.vat_registration_number,
     auto_lock_submitted_filings = EXCLUDED.auto_lock_submitted_filings,
     require_period_confirmation = EXCLUDED.require_period_confirmation,
     onboarding_complete = EXCLUDED.onboarding_complete,
@@ -240,6 +266,7 @@ exports.updateSettings = async (req, res) => {
         normalizedVatDueDay,
         currency || "BSD",
         taxId || "",
+        vatNumber || "",
         autoLockSubmittedFilings ?? true,
         requirePeriodConfirmation ?? true,
         onboardingComplete ?? false,
@@ -306,6 +333,7 @@ exports.updateSettings = async (req, res) => {
         vatDueDay: Number(settings.vat_due_day ?? 28),
         currency: settings.currency || "BSD",
         taxId: settings.tax_id || "",
+        vatNumber: settings.vat_registration_number || "",
         autoLockSubmittedFilings:
           settings.auto_lock_submitted_filings ?? true,
         requirePeriodConfirmation:

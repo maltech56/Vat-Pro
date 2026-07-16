@@ -122,20 +122,47 @@ exports.getCompanySettings = async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT
-        c.id,
-        c.name,
-        c.email,
-        c.phone,
-        c.address,
-        c.tin,
-        cs.default_vat_rate
-      FROM companies c
-      LEFT JOIN company_settings cs
-        ON cs.company_id = c.id
-      WHERE c.id = $1
-      LIMIT 1
-      `,
+  SELECT
+      c.id,
+      c.name,
+      c.email,
+      c.phone,
+      c.address,
+
+      cs.tax_id,
+      cs.vat_registration_number,
+
+      cs.default_vat_rate,
+      cs.filing_frequency,
+      cs.currency,
+      cs.tax_year_start,
+      cs.fiscal_year_start,
+      cs.vat_due_day,
+
+      cs.date_format,
+      cs.rows_per_page,
+      cs.default_report_tab,
+
+      cs.logo_url,
+      cs.default_home_tab,
+      cs.brand_primary_color,
+      cs.brand_secondary_color,
+      cs.primary_color,
+
+      cs.home_screen_title,
+      cs.home_screen_subtitle,
+
+      cs.auto_lock_submitted_filings,
+      cs.require_period_confirmation,
+      cs.onboarding_complete
+
+  FROM companies c
+  LEFT JOIN company_settings cs
+      ON cs.company_id = c.id
+
+  WHERE c.id = $1
+  LIMIT 1
+  `,
       [companyId]
     );
 
@@ -148,14 +175,55 @@ exports.getCompanySettings = async (req, res) => {
     const row = result.rows[0];
 
     return res.json({
-      companyId: row.id,
-      companyName: row.name || "",
-      email: row.email || "",
-      phone: row.phone || "",
-      address: row.address || "",
-      tin: row.tin || "",
-      defaultVatRate: Number(row.default_vat_rate ?? 10),
+      company: {
+        id: row.id,
+        name: row.name || "",
+        email: row.email || "",
+        phone: row.phone || "",
+        address: row.address || "",
+      },
+
+      settings: {
+        taxId: row.tax_id || "",
+        vatNumber: row.vat_registration_number || "",
+
+        defaultVatRate: Number(row.default_vat_rate ?? 10),
+
+        filingFrequency: row.filing_frequency || "Monthly",
+
+        currency: row.currency || "BSD",
+
+        taxYearStart: row.tax_year_start || "January",
+
+        vatDueDay: row.vat_due_day ?? 28,
+
+        dateFormat: row.date_format || "YYYY-MM-DD",
+
+        rowsPerPage: row.rows_per_page ?? 10,
+
+        defaultReportTab: row.default_report_tab || "Summary",
+
+        logoUrl: row.logo_url || "",
+
+        homeScreenTitle: row.home_screen_title || "",
+
+        homeScreenSubtitle: row.home_screen_subtitle || "",
+
+        primaryColor: row.primary_color || "#0F3D91",
+
+        defaultHomeTab: row.default_home_tab || "dashboard",
+
+        autoLockSubmittedFilings:
+          row.auto_lock_submitted_filings ?? false,
+
+        requirePeriodConfirmation:
+          row.require_period_confirmation ?? false,
+
+        onboardingComplete:
+          row.onboarding_complete ?? false,
+      },
     });
+
   } catch (error) {
     console.error("getCompanySettings error:", error);
     return res.status(500).json({

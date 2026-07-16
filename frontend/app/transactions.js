@@ -501,7 +501,7 @@ export default function TransactionsPage() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.pageTitle}>Transactions</Text>
       <Text style={styles.subTitle}>
-        Maltech Digital Archive & Information Services
+        {selectedCompany?.name ?? ""}
       </Text>
 
       <View style={{ marginBottom: 20 }}>
