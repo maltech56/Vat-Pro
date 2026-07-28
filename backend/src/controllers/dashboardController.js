@@ -3,10 +3,11 @@ const pool = require("../config/db");
 // Dashboard overview
 exports.getOverview = async (req, res) => {
   const { companyId } = req.params;
+  const { startDate, endDate } = req.query;
 
   try {
-    const result = await pool.query(
-      `
+
+    let sql = `
       SELECT
         COALESCE(SUM(CASE WHEN type = 'sale' THEN amount ELSE 0 END), 0) AS total_sales,
         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expenses,
@@ -15,9 +16,35 @@ exports.getOverview = async (req, res) => {
         COALESCE(SUM(CASE WHEN type = 'expense' THEN vat_amount ELSE 0 END), 0) AS input_vat
       FROM transactions
       WHERE company_id = $1
-      `,
-      [companyId]
-    );
+    `;
+
+    const params = [companyId];
+
+    // Apply date filtering only when both dates are supplied
+    if (startDate && endDate) {
+      sql += `
+        AND DATE(transaction_date)
+            BETWEEN DATE($2) AND DATE($3)
+      `;
+
+      params.push(startDate, endDate);
+    }
+
+    console.log("====================================");
+    console.log("DASHBOARD OVERVIEW");
+
+    console.log({
+      companyId,
+      startDate,
+      endDate,
+    });
+
+    console.log(sql);
+    console.log(params);
+
+    console.log("====================================");
+
+    const result = await pool.query(sql, params);
 
     const row = result.rows[0];
 
@@ -28,6 +55,20 @@ exports.getOverview = async (req, res) => {
     const inputVAT = Number(row.input_vat || 0);
     const netVATPayable = outputVAT - inputVAT;
 
+    console.log("====================================");
+    console.log("OVERVIEW RESULT");
+
+    console.log({
+      totalSales,
+      totalExpenses,
+      transactionCount,
+      outputVAT,
+      inputVAT,
+      netVATPayable,
+    });
+
+    console.log("====================================");
+
     res.json({
       totalSales,
       totalExpenses,
@@ -36,12 +77,14 @@ exports.getOverview = async (req, res) => {
       inputVAT,
       netVATPayable,
     });
+
   } catch (error) {
     console.error("Overview error:", error);
-    res.status(500).json({ error: "Failed to load overview" });
+    res.status(500).json({
+      error: "Failed to load overview",
+    });
   }
 };
-
 
 // Monthly VAT summary
 exports.getMonthlyVAT = async (req, res) => {

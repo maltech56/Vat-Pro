@@ -143,9 +143,7 @@ export default function TransactionsPage() {
       );
 
       const contentType = response.headers.get("content-type");
-      console.log("Transactions status:", response.status);
-      console.log("Transactions content-type:", contentType);
-
+      
       if (!response.ok) {
         const rawText = await response.text();
         console.error("Transactions non-OK response:", rawText);
@@ -462,8 +460,6 @@ export default function TransactionsPage() {
       params.append("positionTitle", "Manager");
 
       const url = `${API_BASE}/transactions/company/${company.id}/vat-return-pdf?${params.toString()}`;
-
-      console.log("PDF URL:", url);
 
       const response = await fetch(url, {
         method: "GET",

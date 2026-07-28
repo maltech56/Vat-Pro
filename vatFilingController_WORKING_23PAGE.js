@@ -412,15 +412,6 @@ exports.saveVatFiling = async (req, res) => {
           error: "This filing is locked and cannot be modified",
         });
       }
-
-      return res.status(409).json({
-        error:
-          "A VAT filing already exists for this period. Please edit the existing filing instead",
-        existingFiling: {
-          id: existingFiling.id,
-          status: existingFiling.status,
-        },
-      });
     }
 
     const insertResult = await pool.query(

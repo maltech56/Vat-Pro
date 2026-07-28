@@ -216,8 +216,6 @@ const getAuditStatus = (summary) => {
 
 export default function Dashboard() {
 
-  console.log("🚀 DASHBOARD COMPONENT LOADED");
-  
   const [overview, setOverview] = useState({
     totalSales: 0,
     outputVAT: 0,
@@ -435,14 +433,6 @@ export default function Dashboard() {
   }, [getDateRange, selectedCompany?.id]);
 
   const fetchAuditSummary = useCallback(async (companyId) => {
-    console.log("========================================");
-    console.count("fetchAuditSummary()");
-    console.log("TIME:", new Date().toLocaleTimeString());
-    console.log("Company ID:", companyId);
-
-    console.trace("CALL STACK");
-
-    console.log("========================================");
     try {
       const response = await apiFetch(
         `/documents/company/${companyId}/unlinked-summary`
@@ -475,18 +465,6 @@ export default function Dashboard() {
   }, [companyReady, fetchCompanies]);
 
   useEffect(() => {
-
-    console.log("========================================");
-    console.count("MAIN DASHBOARD EFFECT");
-    console.log("TIME:", new Date().toLocaleTimeString());
-
-    console.log({
-      companyReady,
-      companyId: selectedCompany?.id,
-      refreshKey,
-    });
-
-    console.log("========================================");
 
     if (!companyReady) return;
 
@@ -523,17 +501,10 @@ export default function Dashboard() {
 
   useEffect(() => {
 
-    console.log("========================================");
-    console.count("POLLING EFFECT");
-    console.log("TIME:", new Date().toLocaleTimeString());
-    console.log("========================================");
-
     if (!companyReady) return;
     if (!selectedCompany?.id) return;
 
     const interval = setInterval(() => {
-
-      console.log(">>>> 30 SECOND POLL FIRED");
 
       fetchAuditSummary(selectedCompany.id);
 
@@ -549,8 +520,6 @@ export default function Dashboard() {
     }, 30000);
 
     return () => {
-
-      console.log("Polling Interval Cleared");
 
       clearInterval(interval);
 
@@ -1178,7 +1147,11 @@ export default function Dashboard() {
             onNavigate={handleSelectPage}
           />
         )}
-        {activePage === "VAT Filing History" && <VatFilingHistory />}
+        {activePage === "VAT Filing History" && (
+          <VatFilingHistory
+            onNavigate={handleSelectPage}
+          />
+        )}
         {activePage === "Settings" && (
           <SettingsScreen selectedCompany={selectedCompany} />
         )}
@@ -1187,8 +1160,6 @@ export default function Dashboard() {
           <CreateCompanyScreen
             onCompanyCreated={(company) => {
               if (company) {
-                console.log("SELECTED COMPANY CHANGED");
-                console.log(company);
 
                 setSelectedCompany(company);
               }

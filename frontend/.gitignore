@@ -66,3 +66,21 @@ app-example
 # =========================
 /ios
 /android
+
+# =========================
+# VAT Pro Runtime Files
+# =========================
+
+# Uploaded client documents
+backend/uploads/documents/
+
+# Temporary development files
+*.bak
+*_WORKING_*.js
+
+# Windows temporary files
+*.tmp
+*.temp
+
+# VS Code local workspace settings
+.vscode/settings.json

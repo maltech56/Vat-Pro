@@ -13,7 +13,11 @@ import { getToken } from "../src/utils/session";
 import { useCompany } from "../context/CompanyContext";
 import { formatCurrency } from "../src/utils/formatters";
 
-export default function VatFilingScreen({ onNavigate }) {
+export default function VatFilingScreen({
+  onNavigate,
+  pageOptions = {},
+}) {
+
   const { selectedCompany, companyReady } = useCompany();
 
   const [tin, setTin] = useState("");
@@ -38,19 +42,56 @@ export default function VatFilingScreen({ onNavigate }) {
   const [positionTitle, setPositionTitle] = useState("");
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
+  // ==========================================
+  // Draft Editing
+  // ==========================================
 
+  const { filingId, editMode } = pageOptions;
+
+  // Screen Mode
+  const isEditMode = Boolean(editMode && filingId);
+
+  const [editingFilingId, setEditingFilingId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // ==========================================
+  // VAT Summary Status
+  // ==========================================
+  const [vatSummaryStatus, setVatSummaryStatus] = useState("Current");
+  const [lastVatRefresh, setLastVatRefresh] = useState(null);
+  const [refreshingVatSummary, setRefreshingVatSummary] = useState(false);
+
+  // ==========================================
+  // Load Existing Draft
+  // ==========================================
+  useEffect(() => {
+    if (!isEditMode || !filingId) return;
+
+    loadDraftFiling(filingId);
+
+  }, [isEditMode, filingId]);
   useEffect(() => {
     if (!companyReady) return;
+
+    // ==========================================
+    // Edit Mode
+    // Don't initialize a new filing.
+    // loadDraftFiling() owns the form state.
+    // ==========================================
+    if (isEditMode) {
+      return;
+    }
 
     if (!selectedCompany?.id) {
       setAuditReadiness(null);
       setTin("");
       return;
     }
+
     setAuditReadiness(null);
     fetchAuditReadiness();
 
-    // ✅ Reset + hydrate TIN
+    // Reset + hydrate TIN
     setTin(selectedCompany?.tin || selectedCompany?.taxId || "");
 
     setPeriodType("monthly");
@@ -60,7 +101,6 @@ export default function VatFilingScreen({ onNavigate }) {
     setCustomStartDate("");
     setCustomEndDate("");
 
-    // ✅ Reset VAT figures
     setTaxableSales("");
     setZeroRatedSales("");
     setExemptSales("");
@@ -68,14 +108,13 @@ export default function VatFilingScreen({ onNavigate }) {
     setInputVAT("");
     setLoadingSummary(false);
 
-    // ✅ Reset declaration section
     setAuthorizedOfficer("");
     setPositionTitle("");
     setDeclarationAccepted(false);
 
-    // ✅ Reset preview
     setPreviewVisible(false);
-  }, [companyReady, selectedCompany?.id]);
+
+  }, [companyReady, selectedCompany?.id, isEditMode]);
 
   const getDateRange = () => {
     if (periodType === "monthly") {
@@ -164,6 +203,7 @@ export default function VatFilingScreen({ onNavigate }) {
   const netVATPayable = numericOutputVAT - numericInputVAT;
 
   const fetchVatSummary = async (startDate, endDate) => {
+    setRefreshingVatSummary(true);
     try {
       const token = getToken();
 
@@ -193,6 +233,8 @@ export default function VatFilingScreen({ onNavigate }) {
       setExemptSales(String(data.exemptSales ?? 0));
       setOutputVAT(String(data.outputVAT ?? data.outputVat ?? 0));
       setInputVAT(String(data.inputVAT ?? data.inputVat ?? 0));
+      setVatSummaryStatus("Current");
+      setLastVatRefresh(new Date());
     } catch (error) {
       console.error("VAT summary fetch error:", error);
       Alert.alert(
@@ -201,10 +243,14 @@ export default function VatFilingScreen({ onNavigate }) {
       );
     } finally {
       setLoadingSummary(false);
+      setRefreshingVatSummary(false);
     }
   };
 
   useEffect(() => {
+    // Don't automatically recalculate while editing a saved draft.
+    if (isEditMode) return;
+
     const { start, end } = getDateRange();
 
     if (selectedCompany?.id && start && end) {
@@ -218,6 +264,7 @@ export default function VatFilingScreen({ onNavigate }) {
     selectedYear,
     customStartDate,
     customEndDate,
+    isEditMode,
   ]);
 
   useEffect(() => {
@@ -285,7 +332,67 @@ export default function VatFilingScreen({ onNavigate }) {
       setAuditReadiness(null);
     }
   };
+
+  const loadDraftFiling = async (filingId) => {
+    try {
+      const token = getToken();
+
+      const response = await fetch(
+        `${API_BASE}/vat-filings/${filingId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("Draft received", data);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load draft filing");
+      }
+
+      setEditingFilingId(data.id);
+      setIsEditing(true);
+
+      // Company
+      setTin(data.tin || "");
+
+      // Filing Period
+      setCustomStartDate(data.startDate || "");
+      setCustomEndDate(data.endDate || "");
+      setPeriodType("custom");
+
+      // VAT Figures
+      setTaxableSales(String(data.taxableSales ?? 0));
+      setZeroRatedSales(String(data.zeroRatedSales ?? 0));
+      setExemptSales(String(data.exemptSales ?? 0));
+      setOutputVAT(String(data.outputVat ?? 0));
+      setInputVAT(String(data.inputVat ?? 0));
+
+      // Declaration
+      setAuthorizedOfficer(data.authorizedOfficer || "");
+      setPositionTitle(data.positionTitle || "");
+      setDeclarationAccepted(Boolean(data.declarationAccepted));
+
+    } catch (error) {
+      console.error("Load draft filing error:", error);
+
+      Alert.alert(
+        "Load Draft",
+        error.message || "Unable to load the draft filing."
+      );
+    }
+  };
+
   const continueGenerate = async () => {
+
+    console.log("====================================");
+    console.log("continueGenerate() STARTED");
+    console.log("====================================");
+
     try {
       // duplicate ONLY the part AFTER audit checks
 
@@ -294,12 +401,16 @@ export default function VatFilingScreen({ onNavigate }) {
       const token = getToken();
       const { start, end } = getDateRange();
 
+      console.log("About to POST to:", `${API_BASE}/vat-filings/save`);
+      console.log("Posting VAT filing...");
+
       const saveResponse = await fetch(`${API_BASE}/vat-filings/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+
         body: JSON.stringify({
           companyId: selectedCompany?.id,
           startDate: start,
@@ -324,12 +435,36 @@ export default function VatFilingScreen({ onNavigate }) {
         }),
       });
 
+      console.log("====================================");
+      console.log("Save response status:", saveResponse.status);
+      console.log("Save response OK:", saveResponse.ok);
+      console.log("====================================");
+
       if (saveResponse.status === 409) {
         const data = await saveResponse.json();
+
+        Alert.alert(
+          "Duplicate Filing",
+          data.error || "Using existing filing."
+        );
+
         filingId = data?.existingFiling?.id || null;
-      } else {
+      }
+      else if (!saveResponse.ok) {
+        const errorData = await saveResponse.json().catch(() => ({}));
+
+        throw new Error(
+          errorData.error || "Failed to save VAT filing."
+        );
+      }
+      else {
         const data = await saveResponse.json();
+
         filingId = data?.filing?.id || null;
+      }
+
+      if (!filingId) {
+        throw new Error("No filing ID returned.");
       }
 
       const pdfResponse = await fetch(
@@ -362,7 +497,12 @@ export default function VatFilingScreen({ onNavigate }) {
 
       Alert.alert("Success", "VAT filing saved and filing pack generated.");
     } catch (error) {
-      console.error(error);
+      console.error("continueGenerate() ERROR:", error);
+
+      Alert.alert(
+        "Generation Failed",
+        error.message || "An unexpected error occurred."
+      );
     }
   };
 
@@ -381,14 +521,28 @@ export default function VatFilingScreen({ onNavigate }) {
 
   const handleGenerate = async () => {
     try {
+      console.log("====================================");
+      console.log("STEP 1");
+      console.log("handleGenerate() ENTERED");
+      console.log("isEditMode:", isEditMode);
+      console.log("editingFilingId:", editingFilingId);
+      console.log("auditReadiness:", auditReadiness);
+      console.log("====================================");
+
       const token = getToken();
 
       if (!token) {
+
+        console.log("STOPPED: Missing token");
+
         Alert.alert("Missing token", "Please log in again.");
         return;
       }
 
       if (!selectedCompany?.id) {
+
+        console.log("STOPPED: No selected company");
+
         Alert.alert("Missing company", "No company selected.");
         return;
       }
@@ -396,11 +550,19 @@ export default function VatFilingScreen({ onNavigate }) {
       const { start, end } = getDateRange();
 
       if (!tin.trim()) {
+
+        console.log("STOPPED: Missing TIN");
+
         Alert.alert("Missing TIN", "Please enter the company TIN.");
         return;
       }
 
       if (!start || !end) {
+
+        console.log("STOPPED: Missing filing period");
+        console.log("start:", start);
+        console.log("end:", end);
+
         Alert.alert(
           "Missing filing period",
           "Please complete the filing period details."
@@ -409,6 +571,9 @@ export default function VatFilingScreen({ onNavigate }) {
       }
 
       if (!authorizedOfficer.trim()) {
+
+        console.log("STOPPED: Missing Authorized Officer");
+
         Alert.alert(
           "Missing authorized officer",
           "Please enter the name of the authorized officer."
@@ -417,14 +582,21 @@ export default function VatFilingScreen({ onNavigate }) {
       }
 
       if (!positionTitle.trim()) {
+
+        console.log("STOPPED: Missing Position");
+
         Alert.alert(
           "Missing position title",
           "Please enter the officer's position title."
         );
+
         return;
       }
 
       if (!declarationAccepted) {
+
+        console.log("STOPPED: Declaration not accepted");
+
         Alert.alert(
           "Declaration required",
           "Please confirm the declaration before continuing."
@@ -437,7 +609,18 @@ export default function VatFilingScreen({ onNavigate }) {
       // ===============================
 
       // 🔴 HARD BLOCK — must fix
+
+      console.log("====================================");
+      console.log("STEP 2");
+      console.log("Audit Check");
+      console.log("auditReadiness =", auditReadiness);
+      console.log("====================================");
+
       if (auditReadiness && auditReadiness.auditScore < 50) {
+
+        console.log("Audit HARD BLOCK triggered");
+        console.log("Audit Score:", auditReadiness.auditScore);
+
         Alert.alert(
           "Audit Readiness Too Low",
           `Audit score is ${auditReadiness.auditScore}%. You must link documents before filing.`,
@@ -453,24 +636,18 @@ export default function VatFilingScreen({ onNavigate }) {
 
       // 🟠 WARNING — allow override
       if (auditReadiness && auditReadiness.auditScore < 80) {
-        Alert.alert(
-          "Audit Warning",
-          `Audit Score: ${auditReadiness.auditScore}%\n\nSome transactions are missing documents.`,
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Review Documents",
-              onPress: goToUnlinkedDocuments,
-            },
-            {
-              text: "Continue Anyway",
-              onPress: () => continueGenerate(),
-            },
-          ]
-        );
+
+        console.log("Audit WARNING triggered");
+        console.log("Audit Score:", auditReadiness.auditScore);
+
+        console.log("TEMPORARY: bypassing warning dialog");
+
+        await continueGenerate();
+
         return;
       }
       let filingId = null;
+      console.log("No audit warning - continuing directly to save.");
 
       const saveResponse = await fetch(`${API_BASE}/vat-filings/save`, {
         method: "POST",
@@ -595,7 +772,9 @@ export default function VatFilingScreen({ onNavigate }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.pageTitle}>VAT Filing Screen</Text>
+      <Text style={styles.pageTitle}>
+        🚨 TEST BUILD 2026-07-24 🚨
+      </Text>
       <Text style={styles.subTitle}>
         Bahamas VAT return preparation workspace
       </Text>
@@ -723,8 +902,66 @@ export default function VatFilingScreen({ onNavigate }) {
         <Text style={styles.readOnlyValue}>{filingPeriodLabel}</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>VAT Figures</Text>
+      <View style={styles.section}>
+
+        {/* ==========================================
+        RECONCILIATION STATUS
+    ========================================== */}
+
+        <View style={styles.auditStatusCard}>
+
+          <Text style={styles.auditStatusTitle}>
+            Reconciliation Status
+          </Text>
+
+          <Text style={styles.auditStatusItem}>
+            ✓ VAT Summary: {vatSummaryStatus}
+          </Text>
+
+          <Text style={styles.auditStatusItem}>
+            ✓ Audit Score: {auditReadiness?.auditScore ?? "--"}%
+          </Text>
+
+          <Text style={styles.auditStatusItem}>
+            Last Refreshed
+          </Text>
+
+          <Text style={styles.auditStatusDate}>
+            {lastVatRefresh
+              ? new Date(lastVatRefresh).toLocaleString()
+              : "Not yet refreshed"}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.refreshButton}
+            disabled={refreshingVatSummary}
+            onPress={() => {
+
+              const { start, end } = getDateRange();
+
+              fetchVatSummary(start, end);
+
+            }}
+          >
+            <Text style={styles.refreshButtonText}>
+
+              {refreshingVatSummary
+                ? "Refreshing VAT Summary..."
+                : "↻ Refresh VAT Summary"}
+
+            </Text>
+
+          </TouchableOpacity>
+
+        </View>
+
+        {/* ==========================================
+        VAT FIGURES
+    ========================================== */}
+
+        <Text style={styles.sectionTitle}>
+          VAT Figures
+        </Text>
 
         {loadingSummary && (
           <Text style={styles.loadingText}>

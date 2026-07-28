@@ -1,8 +1,5 @@
 const pool = require("../config/db");
 const PDFDocument = require("pdfkit");
-const {
-  buildFilingSnapshot
-} = require("../services/filingSnapshotService");
 
 const toNumber = (value) => Number(value || 0);
 
@@ -65,72 +62,89 @@ const buildFilingPackData = async (filingId) => {
 
   const filing = filingResult.rows[0];
 
-  const transactions = filing.supporting_transactions || [];
-
-  const documents = filing.linked_documents || [];
-
-  const transactionsMissingDocuments =
-    filing.missing_document_warnings || [];
-
-  const transactionCount = Number(filing.transaction_count || 0);
-
-  const linkedTransactionCount = Number(
-    filing.linked_transaction_count || 0
-  );
-
-  const missingDocumentCount = Number(
-    filing.missing_document_count || 0
-  );
-
-  const documentCount = Number(
-    filing.document_count || 0
-  );
-
-  const auditScore = Number(filing.audit_score || 0);
-
-  const auditReadiness =
-    filing.audit_readiness || "unknown";
-
   if (!filing.period_start || !filing.period_end) {
     throw new Error("Invalid filing period");
   }
 
-  console.log("====================================");
-  console.log("BUILD FILING PACK (SNAPSHOT)");
-  console.log({
-    filingId: filing.id,
-    companyId: filing.company_id,
-    transactionCount,
-    documentCount,
-    linkedTransactionCount,
-    missingDocumentCount,
-    auditScore,
-    auditReadiness
+  const transactionResult = await pool.query(
+    `
+    SELECT
+      t.*
+    FROM transactions t
+    WHERE t.company_id = $1
+      AND DATE(t.transaction_date) BETWEEN DATE($2) AND DATE($3)
+    ORDER BY t.transaction_date ASC, t.id ASC
+    `,
+    [filing.company_id, filing.period_start, filing.period_end]
+  );
+
+  const transactions = transactionResult.rows;
+  const transactionIds = transactions.map((t) => t.id);
+
+  let documents = [];
+
+  if (transactionIds.length > 0) {
+    const documentResult = await pool.query(
+      `
+      SELECT
+        d.*
+      FROM company_documents d
+      WHERE d.transaction_id = ANY($1)
+      ORDER BY d.created_at DESC, d.id DESC
+      `,
+      [transactionIds]
+    );
+
+    documents = documentResult.rows;
+  }
+
+  const documentsByTransactionId = {};
+  for (const doc of documents) {
+    if (!documentsByTransactionId[doc.transaction_id]) {
+      documentsByTransactionId[doc.transaction_id] = [];
+    }
+    documentsByTransactionId[doc.transaction_id].push(doc);
+  }
+
+  const transactionSummaries = transactions.map((tx) => {
+    const linkedDocuments = documentsByTransactionId[tx.id] || [];
+
+    return {
+      ...tx,
+      linkedDocuments,
+      linkedDocumentCount: linkedDocuments.length,
+      hasLinkedDocuments: linkedDocuments.length > 0,
+    };
   });
 
-  console.log("====================================");
-  console.log("FINAL FILING PACK STATS");
+  const transactionsMissingDocuments = transactionSummaries.filter(
+    (tx) => tx.linkedDocumentCount === 0
+  );
 
-  console.log({
-    filingId: filing.id,
-    companyId: filing.company_id,
-    periodStart: filing.period_start,
-    periodEnd: filing.period_end,
+  const documentCount = documents.length;
+  const transactionCount = transactions.length;
+  const linkedTransactionCount = transactionSummaries.filter(
+    (tx) => tx.linkedDocumentCount > 0
+  ).length;
+  const missingDocumentCount = transactionsMissingDocuments.length;
 
-    transactionCount,
-    documentCount,
-    linkedTransactionCount,
-    missingDocumentCount,
+  const auditScore =
+    transactionCount === 0
+      ? 0
+      : Math.round((linkedTransactionCount / transactionCount) * 100);
 
-    auditScore,
-    auditReadiness,
-  });
-
-  console.log("====================================");
+  const auditReadiness =
+    transactionCount === 0
+      ? "no_transactions"
+      : missingDocumentCount === 0
+        ? "complete"
+        : linkedTransactionCount > 0
+          ? "partial"
+          : "missing_documents";
 
   return {
     filing: mapFilingRow(filing),
-    transactions,
+    transactions: transactionSummaries,
     documents,
     stats: {
       transactionCount,
@@ -143,50 +157,6 @@ const buildFilingPackData = async (filingId) => {
       auditScore,
       transactionsMissingDocuments,
     },
-  };
-};
-
-// ============================================
-// Read immutable audit snapshot from VAT filing
-// ============================================
-
-const getStoredAuditSnapshot = async (filingId) => {
-  const result = await pool.query(
-    `
-    SELECT
-      id,
-      audit_score,
-      audit_readiness,
-      transaction_count,
-      linked_transaction_count,
-      missing_document_count,
-      document_count
-    FROM vat_filings
-    WHERE id = $1
-    LIMIT 1
-    `,
-    [filingId]
-  );
-
-  if (result.rows.length === 0) {
-    throw new Error("Filing not found");
-  }
-
-  const filing = result.rows[0];
-
-  return {
-    auditScore: Number(filing.audit_score || 0),
-    auditReadiness: filing.audit_readiness || "unknown",
-    transactionCount: Number(filing.transaction_count || 0),
-    linkedTransactionCount: Number(
-      filing.linked_transaction_count || 0
-    ),
-    missingDocumentCount: Number(
-      filing.missing_document_count || 0
-    ),
-    documentCount: Number(
-      filing.document_count || 0
-    ),
   };
 };
 
@@ -367,11 +337,6 @@ const buildVat001Lines = (summary = {}) => {
 
 exports.saveVatFiling = async (req, res) => {
   try {
-    console.log("====================================");
-    console.log("RAW REQUEST BODY");
-    console.log(JSON.stringify(req.body, null, 2));
-    console.log("====================================");
-
     const {
       companyId,
 
@@ -416,43 +381,6 @@ exports.saveVatFiling = async (req, res) => {
     const numericInputVat = Number(inputVat);
     const numericNetVat = Number(netVat);
 
-    const filingData = {
-      companyId,
-
-      tin,
-
-      filingPeriodLabel,
-
-      startDate: filingStartDate,
-      endDate: filingEndDate,
-
-      taxableSales: Number(taxableSales || 0),
-      zeroRatedSales: Number(zeroRatedSales || 0),
-      exemptSales: Number(exemptSales || 0),
-
-      totalSales:
-        Number(totalSales) ||
-        Number(taxableSales || 0) +
-        Number(zeroRatedSales || 0) +
-        Number(exemptSales || 0),
-
-      totalPurchases: Number(totalPurchases || 0),
-
-      outputVat: numericOutputVat,
-      inputVat: numericInputVat,
-      netVat: numericNetVat,
-
-      authorizedOfficer,
-      positionTitle,
-
-      declarationAccepted: Boolean(declarationAccepted),
-    };
-
-    console.log("====================================");
-    console.log("FILING DATA TO SAVE");
-    console.log(JSON.stringify(filingData, null, 2));
-    console.log("====================================");
-
     if (
       Number.isNaN(numericOutputVat) ||
       Number.isNaN(numericInputVat) ||
@@ -463,317 +391,73 @@ exports.saveVatFiling = async (req, res) => {
       });
     }
 
-    //----------------------------------------------------------
-    // Build immutable filing snapshot
-    //----------------------------------------------------------
-
-    const snapshot = await buildFilingSnapshot({
-      companyId: filingData.companyId,
-
-      periodStart: filingData.startDate,
-
-      periodEnd: filingData.endDate,
-
-      filingData
-    });
-
-    const snapshotAudit = snapshot.audit || {};
-
-    const snapshotStats = snapshot.stats || {};
-
-    console.log("====================================");
-    console.log("SNAPSHOT CREATED");
-    console.log({
-      transactionCount: snapshot.transactions.length,
-      audit: snapshot.audit,
-      linkedDocuments: snapshot.linkedDocuments.length,
-      missingDocumentWarnings:
-        snapshot.missingDocumentWarnings.length
-    });
-    console.log("====================================");
-
     const existing = await pool.query(
       `
-  SELECT id, status
-  FROM vat_filings
-  WHERE company_id = $1
-    AND period_start = $2
-    AND period_end = $3
-  LIMIT 1
-  `,
-      [
-        filingData.companyId,
-        filingData.startDate,
-        filingData.endDate,
-      ]
+      SELECT id, status
+      FROM vat_filings
+      WHERE company_id = $1
+      AND period_start = $2
+      AND period_end = $3
+      LIMIT 1
+      `,
+      [companyId, filingStartDate, filingEndDate]
     );
 
     if (existing.rows.length > 0) {
       const existingFiling = existing.rows[0];
 
-      const currentStatus = String(existingFiling.status || "").toLowerCase();
-
-      if (currentStatus === "submitted") {
+      // 🚨 NEW: Prevent editing locked filings
+      if (existingFiling.status === "locked") {
         return res.status(400).json({
-          error: "Submitted filings cannot be modified.",
+          error: "This filing is locked and cannot be modified",
         });
       }
 
-      if (currentStatus === "locked") {
-        return res.status(400).json({
-          error: "Locked filings cannot be modified.",
-        });
-      }
-
-      // Existing draft → UPDATE instead of INSERT
-      const updateResult = await pool.query(
-        `
-UPDATE vat_filings
-SET
-    tin = $2,
-    filing_period_label = $3,
-
-    start_date = $4,
-    end_date = $5,
-
-    period_start = $4,
-    period_end = $5,
-
-    taxable_sales = $6,
-    zero_rated_sales = $7,
-    exempt_sales = $8,
-
-    total_sales = $9,
-    total_purchases = $10,
-
-    output_vat = $11,
-    input_vat = $12,
-    net_vat = $13,
-
-    authorized_officer = $14,
-    position_title = $15,
-    declaration_accepted = $16,
-
-    audit_score = $17,
-    audit_readiness = $18,
-
-    transaction_count = $19,
-    linked_transaction_count = $20,
-    missing_document_count = $21,
-    document_count = $22,
-
-    supporting_transactions = $23,
-    linked_documents = $24,
-    missing_document_warnings = $25,
-
-    status = 'draft'
-
-WHERE id = $1
-
-RETURNING *
-`,
-        [
-          existingFiling.id,
-
-          filingData.tin,
-          filingData.filingPeriodLabel,
-
-          filingData.startDate,
-          filingData.endDate,
-
-          filingData.taxableSales,
-          filingData.zeroRatedSales,
-          filingData.exemptSales,
-
-          filingData.totalSales,
-          filingData.totalPurchases,
-
-          filingData.outputVat,
-          filingData.inputVat,
-          filingData.netVat,
-
-          filingData.authorizedOfficer,
-          filingData.positionTitle,
-          filingData.declarationAccepted,
-
-          snapshotAudit.auditScore,
-          snapshotAudit.auditReadiness,
-
-          snapshotStats.transactionCount,
-          snapshotStats.linkedTransactionCount,
-          snapshotStats.missingDocumentCount,
-          snapshotStats.documentCount,
-
-          JSON.stringify(snapshot.transactions),
-          JSON.stringify(snapshot.linkedDocuments),
-          JSON.stringify(snapshot.missingDocumentWarnings)
-        ]
-      );
-
-      console.log("====================================");
-      console.log("UPDATED DATABASE ROW");
-      console.log(JSON.stringify(updateResult.rows[0], null, 2));
-      console.log("====================================");
-
-      return res.json({
-        message: "VAT filing updated successfully",
-        filing: mapFilingRow(updateResult.rows[0]),
+      return res.status(409).json({
+        error:
+          "A VAT filing already exists for this period. Please edit the existing filing instead",
+        existingFiling: {
+          id: existingFiling.id,
+          status: existingFiling.status,
+        },
       });
     }
-
-    const insertParams = [
-      filingData.companyId,
-
-      filingData.tin,
-      filingData.filingPeriodLabel,
-
-      filingData.startDate,
-      filingData.endDate,
-
-      filingData.taxableSales,
-      filingData.zeroRatedSales,
-      filingData.exemptSales,
-
-      filingData.totalSales,
-      filingData.totalPurchases,
-
-      filingData.outputVat,
-      filingData.inputVat,
-      filingData.netVat,
-
-      filingData.authorizedOfficer,
-      filingData.positionTitle,
-      filingData.declarationAccepted,
-
-      snapshotAudit.auditScore,
-      snapshotAudit.auditReadiness,
-
-      snapshotStats.transactionCount,
-      snapshotStats.linkedTransactionCount,
-      snapshotStats.missingDocumentCount,
-      snapshotStats.documentCount,
-
-      JSON.stringify(snapshot.transactions),
-      JSON.stringify(snapshot.linkedDocuments),
-      JSON.stringify(snapshot.missingDocumentWarnings),
-
-      "draft"
-    ];
 
     const insertResult = await pool.query(
       `
   INSERT INTO vat_filings (
-
     company_id,
-
-    tin,
-    filing_period_label,
-
-    start_date,
-    end_date,
-
     period_start,
     period_end,
-
-    taxable_sales,
-    zero_rated_sales,
-    exempt_sales,
-
     total_sales,
     total_purchases,
-
     output_vat,
     input_vat,
     net_vat,
-
-    authorized_officer,
-    position_title,
-    declaration_accepted,
-
-    audit_score,
-    audit_readiness,
-
-    transaction_count,
-    linked_transaction_count,
-    missing_document_count,
-    document_count,
-
-    supporting_transactions,
-    linked_documents,
-    missing_document_warnings,
-
     status
-
-)
-VALUES (
-
-    $1,
-
-    $2,
-    $3,
-
-    $4,
-    $5,
-
-    $4,
-    $5,
-
-    $6,
-    $7,
-    $8,
-
-    $9,
-    $10,
-
-    $11,
-    $12,
-    $13,
-
-    $14,
-    $15,
-    $16,
-
-    $17,
-    $18,
-
-    $19,
-    $20,
-    $21,
-    $22,
-
-    $23,
-    $24,
-    $25,
-
-    $26
-
-)
-
-RETURNING
-    id,
-    company_id,
-    tin,
-    filing_period_label,
-    period_start,
-    period_end,
-    status,
-    audit_score,
-    audit_readiness,
-    transaction_count,
-    linked_transaction_count,
-    missing_document_count,
-    document_count,
-    supporting_transactions,
-    linked_documents,
-    missing_document_warnings;
+  )
+  VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
+  )
+  RETURNING *
   `,
-      insertParams
+      [
+        companyId,
+        filingStartDate,
+        filingEndDate,
+        Number(
+          totalSales ||
+          Number(taxableSales || 0) +
+          Number(zeroRatedSales || 0) +
+          Number(exemptSales || 0)
+        ),
+        Number(totalPurchases || 0),
+        numericOutputVat,
+        numericInputVat,
+        numericNetVat,
+        "draft",
+      ]
     );
-
-    console.log("====================================");
-    console.log("INSERTED DATABASE ROW");
-    console.log(JSON.stringify(insertResult.rows[0], null, 2));
-    console.log("====================================");
 
     return res.status(201).json({
       message: "VAT filing saved successfully",
@@ -1670,6 +1354,7 @@ exports.lockFiling = async (req, res) => {
       filingId,
       auditScore,
       missingDocumentCount,
+      unlinkedDocumentCount,
       transactionCount,
     });
 
@@ -1732,24 +1417,7 @@ exports.lockFiling = async (req, res) => {
       UPDATE vat_filings
       SET status = 'locked'
       WHERE id = $1
-    
-    RETURNING
-    id,
-    company_id,
-    tin,
-    filing_period_label,
-    period_start,
-    period_end,
-    status,
-    audit_score,
-    audit_readiness,
-    transaction_count,
-    linked_transaction_count,
-    missing_document_count,
-    document_count,
-    supporting_transactions,
-    linked_documents,
-    missing_document_warnings;
+      RETURNING *
       `,
       [filingId]
     );
@@ -1821,23 +1489,39 @@ exports.updateFilingStatus = async (req, res) => {
 
     // 🔒 AUDIT SUBMISSION VALIDATION
     if (status === "submitted") {
-      const snapshot = await getStoredAuditSnapshot(filingId);
+      const packData = await buildFilingPackData(filingId);
 
-      const auditScore = snapshot.auditScore;
+      const auditScore = Number(
+        packData.audit?.auditScore || 0
+      );
 
-      const missingDocumentCount =
-        snapshot.missingDocumentCount;
+      const missingDocumentCount = Number(
+        packData.stats?.missingDocumentCount || 0
+      );
 
-      const transactionCount =
-        snapshot.transactionCount;
+      const unlinkedDocumentCount = Number(
+        packData.stats?.unlinkedDocumentCount || 0
+      );
+
+      const transactionCount = Number(
+        packData.stats?.transactionCount || 0
+      );
 
       console.log("===== AUDIT SUBMISSION CHECK =====");
       console.log({
         filingId,
         auditScore,
         missingDocumentCount,
+        unlinkedDocumentCount,
         transactionCount,
       });
+
+      if (transactionCount === 0) {
+        return res.status(400).json({
+          error:
+            "Filing cannot be locked because no transactions exist.",
+        });
+      }
 
       if (transactionCount === 0) {
         return res.status(400).json({
@@ -1859,6 +1543,14 @@ exports.updateFilingStatus = async (req, res) => {
           error:
             "Missing supporting documents detected.",
           missingDocumentCount,
+        });
+      }
+
+      if (unlinkedDocumentCount > 0) {
+        return res.status(400).json({
+          error:
+            "Unlinked documents detected.",
+          unlinkedDocumentCount,
         });
       }
 
@@ -1906,7 +1598,8 @@ exports.deleteFiling = async (req, res) => {
     }
 
     if (
-      ["locked", "submitted", "void"].includes(status)
+      existing.rows[0].status === "locked" ||
+      existing.rows[0].status === "submitted"
     ) {
       return res.status(400).json({
         error:
@@ -1916,19 +1609,20 @@ exports.deleteFiling = async (req, res) => {
 
     const result = await pool.query(
       `
-      UPDATE vat_filings
-      SET status='void'
-      WHERE id=$1
+      DELETE FROM vat_filings
+      WHERE id = $1
       RETURNING id
       `,
       [filingId]
     );
 
     return res.json({
-      "message": "Filing voided successfully"
+      message: "Filing deleted successfully",
+      id: result.rows[0].id,
     });
   } catch (error) {
     console.error("Error deleting filing:", error);
     return res.status(500).json({ error: "Failed to delete filing" });
   }
 };
+    

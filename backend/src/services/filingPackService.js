@@ -66,23 +66,23 @@ const buildAuditLevel = ({
 const getFilingPackData = async (filingId) => {
   const filingResult = await pool.query(
     `
-    SELECT
-      vf.id,
-      vf.company_id,
-      vf.period_start
-      vf.period_end
-      vf.status,
-      vf.total_sales,
-      vf.output_vat,
-      vf.input_vat,
-      vf.net_vat_payable,
-      vf.created_at,
-      c.name AS c.name,
-      c.name AS fallback_c.name
-    FROM vat_filings vf
-    LEFT JOIN companies c ON c.id = vf.company_id
-    WHERE vf.id = $1
-    LIMIT 1
+   SELECT
+    vf.id,
+    vf.company_id,
+    vf.period_start,
+    vf.period_end,
+    vf.status,
+    vf.total_sales,
+    vf.output_vat,
+    vf.input_vat,
+    vf.net_vat_payable,
+    vf.created_at,
+    c.name AS company_name
+FROM vat_filings vf
+LEFT JOIN companies c
+ON c.id = vf.company_id
+WHERE vf.id = $1
+LIMIT 1;
     `,
     [filingId]
   );
@@ -194,7 +194,7 @@ const getFilingPackData = async (filingId) => {
       id: filing.id,
       companyId: filing.company_id,
       companyName:
-        filing.c.name || filing.fallback_c.name || "Company",
+        filing.company_name || "Company",
       periodStart: filing.period_start,
       periodEnd: filing.period_end,
       status: filing.status,

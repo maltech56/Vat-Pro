@@ -65,8 +65,6 @@ export default function AddTransaction({ defaultType = "sale", onSaved }) {
         description: form.description,
       };
 
-      console.log("Submitting transaction payload:", payload);
-
       const res = await fetch(`${API_BASE}/transactions`, {
         method: "POST",
         headers: {
@@ -77,13 +75,14 @@ export default function AddTransaction({ defaultType = "sale", onSaved }) {
       });
 
       const rawText = await res.text();
-      console.log("Transaction response:", rawText);
 
       let data;
       try {
         data = JSON.parse(rawText);
-      } catch (_parseError) {
-        throw new Error(`Server returned non-JSON response: ${rawText}`);
+      } catch {
+        throw new Error(
+          `Server returned an invalid response:\n${rawText.substring(0, 200)}`
+        );
       }
 
       if (!res.ok) {

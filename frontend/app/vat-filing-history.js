@@ -17,7 +17,7 @@ import { useCompany } from "../context/CompanyContext";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
-export default function VatFilingHistory() {
+export default function VatFilingHistory({ onNavigate }) {
   const [filings, setFilings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingPackId, setDownloadingPackId] = useState(null);
@@ -40,7 +40,6 @@ export default function VatFilingHistory() {
     hasNextPage: false,
     hasPreviousPage: false,
   });
-
 
   useEffect(() => {
     if (!companyReady) return;
@@ -261,6 +260,37 @@ export default function VatFilingHistory() {
     } catch (error) {
       console.error("View details error:", error);
       Alert.alert("Error", error.message || "Failed to load filing details");
+    }
+  };
+
+  // ==========================================
+  // Edit Draft Filing
+  // ==========================================
+  const handleEditFiling = (filing) => {
+    try {
+      console.log("Editing filing:", filing);
+
+      // Navigate back to the VAT Filing screen
+      if (typeof onNavigate === "function") {
+        onNavigate("VAT Filing", {
+          filingId: filing.id,
+          editMode: true,
+        });
+        return;
+      }
+
+      // Fallback while wiring navigation
+      Alert.alert(
+        "Edit Filing",
+        `Edit draft filing #${filing.id}`
+      );
+    } catch (error) {
+      console.error("Edit filing error:", error);
+
+      Alert.alert(
+        "Edit Filing",
+        error.message || "Unable to open draft filing."
+      );
     }
   };
 
@@ -1120,6 +1150,17 @@ export default function VatFilingHistory() {
                         >
                           <Text style={styles.actionText}>View</Text>
                         </TouchableOpacity>
+
+                        {f.status === "draft" && (
+                          <TouchableOpacity
+                            style={styles.actionBlue}
+                            onPress={() => handleEditFiling(f)}
+                          >
+                            <Text style={styles.actionText}>
+                              Edit
+                            </Text>
+                          </TouchableOpacity>
+                        )}
 
                         <TouchableOpacity
                           style={styles.actionBlue}
