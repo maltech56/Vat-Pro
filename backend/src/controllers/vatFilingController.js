@@ -1906,11 +1906,13 @@ exports.deleteFiling = async (req, res) => {
     }
 
     if (
-      ["locked", "submitted", "void"].includes(status)
+      ["locked", "submitted", "void"].includes(
+        existing.rows[0].status
+      )
     ) {
       return res.status(400).json({
         error:
-          "This filing cannot be deleted because it is locked or submitted",
+          "This filing cannot be voided because it is locked, submitted, or already voided",
       });
     }
 
@@ -1925,7 +1927,9 @@ exports.deleteFiling = async (req, res) => {
     );
 
     return res.json({
-      "message": "Filing voided successfully"
+      "message": "Filing voided successfully",
+      id: result.rows[0].id,
+      status: result.rows[0].status,
     });
   } catch (error) {
     console.error("Error deleting filing:", error);
