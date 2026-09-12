@@ -77,7 +77,10 @@ const getFilingPackData = async (filingId) => {
     vf.input_vat,
     vf.net_vat_payable,
     vf.created_at,
-    c.name AS company_name
+c.name AS company_name,
+c.tin AS company_tin,
+c.bin AS company_bin,
+c.vat_number AS company_vat_number
 FROM vat_filings vf
 LEFT JOIN companies c
 ON c.id = vf.company_id
@@ -193,8 +196,10 @@ LIMIT 1;
     filing: {
       id: filing.id,
       companyId: filing.company_id,
-      companyName:
-        filing.company_name || "Company",
+      companyName: filing.company_name || "Company",
+      tin: filing.company_tin || "",
+      bin: filing.company_bin || "",
+      vatNumber: filing.company_vat_number || "",
       periodStart: filing.period_start,
       periodEnd: filing.period_end,
       status: filing.status,

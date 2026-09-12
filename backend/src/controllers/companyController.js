@@ -4,7 +4,7 @@ const createDefaultCompanySettings = require("../utils/createDefaultCompanySetti
 // Create company
 exports.createCompany = async (req, res) => {
   const userId = req.user.id;
-  const { name, tin, vat_number, email, phone, address } = req.body;
+  const { name, tin, bin, vat_number, email, phone, address } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: "Company name is required" });
@@ -18,13 +18,22 @@ exports.createCompany = async (req, res) => {
 
     const companyResult = await client.query(
       `
-      INSERT INTO companies (name, tin, vat_number, email, phone, address)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
+      INSERT INTO companies (
+  name,
+  tin,
+  bin,
+  vat_number,
+  email,
+  phone,
+  address
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING *
       `,
       [
         name,
         tin || null,
+        bin || null,
         vat_number || null,
         email || null,
         phone || null,
@@ -128,6 +137,9 @@ exports.getCompanySettings = async (req, res) => {
       c.email,
       c.phone,
       c.address,
+      c.tin,
+      c.bin,
+      c.vat_number,
 
       cs.tax_id,
       cs.vat_registration_number,
@@ -181,6 +193,9 @@ exports.getCompanySettings = async (req, res) => {
         email: row.email || "",
         phone: row.phone || "",
         address: row.address || "",
+        tin: row.tin || "",
+        bin: row.bin || "",
+        vatNumber: row.vat_number || "",
       },
 
       settings: {
@@ -239,7 +254,15 @@ exports.updateCompanySettings = async (req, res) => {
 
   try {
     const { companyId } = req.params;
-    const { companyName, email, phone, address, tin, defaultVatRate } = req.body;
+    const {
+      companyName,
+      email,
+      phone,
+      address,
+      tin,
+      bin,
+      defaultVatRate,
+    } = req.body;
 
     if (!companyId) {
       return res.status(400).json({
@@ -272,8 +295,9 @@ exports.updateCompanySettings = async (req, res) => {
         email = $2,
         phone = $3,
         address = $4,
-        tin = $5
-      WHERE id = $6
+        tin = $5,
+        bin = $6
+      WHERE id = $7
       RETURNING *
       `,
       [
@@ -282,6 +306,7 @@ exports.updateCompanySettings = async (req, res) => {
         String(phone || "").trim(),
         String(address || "").trim(),
         String(tin || "").trim(),
+        String(bin || "").trim(),
         companyId,
       ]
     );
@@ -336,6 +361,7 @@ exports.updateCompanySettings = async (req, res) => {
         phone: String(phone || "").trim(),
         address: String(address || "").trim(),
         tin: String(tin || "").trim(),
+        bin: String(bin || "").trim(),
         defaultVatRate: numericVatRate,
       },
     });

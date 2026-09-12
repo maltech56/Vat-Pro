@@ -19,6 +19,8 @@ import { API_BASE } from "../src/api/config";
 export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
   const [form, setForm] = useState({
     name: "",
+    tin: "",
+    bin: "",
     email: "",
     phone: "",
     address: "",
@@ -36,6 +38,8 @@ export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
   const resetForm = () => {
     setForm({
       name: "",
+      tin: "",
+      bin: "",
       email: "",
       phone: "",
       address: "",
@@ -72,6 +76,8 @@ export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
         },
         body: JSON.stringify({
           name: form.name.trim(),
+	  tin: form.tin.trim(),
+          bin: form.bin.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
           address: form.address.trim(),
@@ -118,6 +124,31 @@ export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
             value={form.name}
             onChangeText={(value) => handleChange("name", value)}
             placeholder="Enter company name"
+            placeholderTextColor="#94A3B8"
+          />
+        </View>
+
+	<View style={styles.formGroup}>
+        <Text style={styles.label}>Tax Identification Number (TIN)</Text>
+        <TextInput
+          style={styles.input}
+          value={form.tin}
+          onChangeText={(value) =>
+            setForm((prev) => ({ ...prev, tin: value }))
+          }
+          placeholder="Enter TIN"
+        />
+	</View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>
+            Bahamas Identification Number (BIN)
+          </Text>
+          <TextInput
+            style={styles.input}
+            value={form.bin}
+            onChangeText={(value) => handleChange("bin", value)}
+            placeholder="Enter Bahamas Identification Number"
             placeholderTextColor="#94A3B8"
           />
         </View>

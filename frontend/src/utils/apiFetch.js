@@ -1,6 +1,6 @@
 import { getToken, forceLogout } from "./session";
 
-const API_BASE =
+export const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
   "http://localhost:5000/api";
 

@@ -34,13 +34,14 @@ const seedDemoData = async (req, res) => {
     // Create demo company
     const companyResult = await client.query(
       `
-      INSERT INTO companies (name, tin, vat_number, email, phone, address)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO companies (name, tin, bin, vat_number, email, phone, address)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id, name
       `,
       [
         "Demo Company Ltd.",
         "100000001",
+        "BIN-DEMO-100000001",
         "VAT-100000001",
         "demo@maltechdigital.com",
         "242-000-0000",

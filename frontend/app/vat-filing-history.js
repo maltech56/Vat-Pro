@@ -1,4 +1,4 @@
-import { API_BASE } from "../src/api/config";
+import { apiFetch, API_BASE } from "../src/utils/apiFetch";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   TextInput,
   Alert,
   ActivityIndicator,
@@ -148,6 +149,8 @@ export default function VatFilingHistory({ onNavigate }) {
               filing.id,
               {
                 auditScore: Number(data.audit?.auditScore || 0),
+                auditReadiness: data.audit?.auditReadiness || "unknown",
+                transactionCount: Number(data.stats?.transactionCount || 0),
                 missing: Number(data.stats?.missingDocumentCount || 0),
               },
             ];
@@ -327,72 +330,67 @@ export default function VatFilingHistory({ onNavigate }) {
     handleSubmitFiling(filingId);
   };
 
-  const handleSubmitFiling = (filingId) => {
-    Alert.alert(
-      "Submit Filing",
-      "Mark this filing as submitted? The system will check audit readiness before allowing submission.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Submit",
-          onPress: async () => {
-            try {
-              const token = getToken();
-
-              const response = await fetch(
-                `${API_BASE}/vat-filings/${filingId}/status`,
-                {
-                  method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                  },
-                  body: JSON.stringify({ status: "submitted" }),
-                }
-              );
-
-              const data = await response.json();
-
-              if (!response.ok) {
-                if (data.auditScore !== undefined) {
-                  throw new Error(
-                    `${data.error}\n\nAudit Score: ${data.auditScore}%\nMissing Documents: ${data.missingDocumentCount}`
-                  );
-                }
-
-                throw new Error(data.error || "Failed to submit filing");
-              }
-
-              Alert.alert("Success", "Filing marked as submitted");
-
-              if (selectedCompany?.id) {
-                await fetchFilings({
-                  companyId: selectedCompany.id,
-                  page: currentPage,
-                  limit: pageSize,
-                  search: searchTerm,
-                  sortField,
-                  sortDirection,
-                });
-              }
-
-              if (selectedFiling?.id === filingId) {
-                setSelectedFiling((prev) =>
-                  prev ? { ...prev, status: "submitted" } : prev
-                );
-              }
-            } catch (error) {
-              console.error("Submit filing error:", error);
-              Alert.alert(
-                "Submission Blocked",
-                error.message ||
-                "This filing cannot be submitted until audit readiness issues are resolved."
-              );
-            }
-          },
-        },
-      ]
+  const handleSubmitFiling = async (filingId) => {
+    const confirmed = window.confirm(
+      "Mark this filing as submitted?\n\nThe system will check audit readiness before allowing submission."
     );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const token = getToken();
+
+      const response = await fetch(
+        `${API_BASE}/vat-filings/${filingId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: "submitted" }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.auditScore !== undefined) {
+          throw new Error(
+            `${data.error}\n\nAudit Score: ${data.auditScore}%\nMissing Documents: ${data.missingDocumentCount}`
+          );
+        }
+
+        throw new Error(data.error || "Failed to submit filing");
+      }
+
+      alert("Filing marked as submitted");
+
+      if (selectedCompany?.id) {
+        await fetchFilings({
+          companyId: selectedCompany.id,
+          page: currentPage,
+          limit: pageSize,
+          search: searchTerm,
+          sortField,
+          sortDirection,
+        });
+      }
+
+      if (selectedFiling?.id === filingId) {
+        setSelectedFiling((prev) =>
+          prev ? { ...prev, status: "submitted" } : prev
+        );
+      }
+    } catch (error) {
+      console.error("Submit filing error:", error);
+      alert(
+        error.message ||
+        "This filing cannot be submitted until audit readiness issues are resolved."
+      );
+    }
   };
 
   const handleLockFiling = async (filingId) => {
@@ -431,10 +429,58 @@ export default function VatFilingHistory({ onNavigate }) {
     }
   };
 
-  const handleDelete = (filingId) => {
+  const handleDelete = async (filingId) => {
+    console.log("HANDLE DELETE CALLED", filingId);
+
+    // Web browser version
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        `Are you sure you want to void filing #${filingId}?`
+      );
+
+      if (!confirmed) {
+        console.log("DELETE CANCELLED");
+        return;
+      }
+
+      console.log("DELETE CONFIRMED", filingId);
+
+      try {
+        const data = await apiFetch(`/vat-filings/${filingId}`, {
+          method: "DELETE",
+        });
+
+        console.log("DELETE RESPONSE:", data);
+
+        Alert.alert(
+          "Success",
+          data.message || "Filing voided successfully"
+        );
+
+        await fetchFilings({
+          companyId: selectedCompany.id,
+          page: currentPage,
+          limit: pageSize,
+          search: searchTerm,
+          sortField,
+          sortDirection,
+        });
+      } catch (error) {
+        console.error("Delete error:", error);
+
+        Alert.alert(
+          "Error",
+          error.message || "Failed to void filing"
+        );
+      }
+
+      return;
+    }
+
+    // Mobile version
     Alert.alert(
       "Delete Filing",
-      "Are you sure you want to delete this filing?",
+      `Are you sure you want to void filing #${filingId}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -442,51 +488,32 @@ export default function VatFilingHistory({ onNavigate }) {
           style: "destructive",
           onPress: async () => {
             try {
-              const token = getToken();
+              const data = await apiFetch(`/vat-filings/${filingId}`, {
+                method: "DELETE",
+              });
 
-              const response = await fetch(
-                `${API_BASE}/vat-filings/${filingId}`,
-                {
-                  method: "DELETE",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
+              Alert.alert(
+                "Success",
+                data.message || "Filing voided successfully"
               );
 
-              const data = await response.json();
-
-              if (!response.ok) {
-                throw new Error(data.error || "Delete failed");
-              }
-
-              Alert.alert("Success", "Filing deleted");
-
-              if (selectedFiling?.id === filingId) {
-                setDetailsVisible(false);
-                setSelectedFiling(null);
-              }
-
-              if (selectedCompany?.id) {
-                const targetPage =
-                  filings.length === 1 && currentPage > 1
-                    ? currentPage - 1
-                    : currentPage;
-
-                await fetchFilings({
-                  companyId: selectedCompany.id,
-                  page: targetPage,
-                  limit: pageSize,
-                  search: searchTerm,
-                  sortField,
-                  sortDirection,
-                });
-              }
+              await fetchFilings({
+                companyId: selectedCompany.id,
+                page: currentPage,
+                limit: pageSize,
+                search: searchTerm,
+                sortField,
+                sortDirection,
+              });
             } catch (error) {
               console.error("Delete error:", error);
-              Alert.alert("Error", error.message || "Failed to delete filing");
+
+              Alert.alert(
+                "Error",
+                error.message || "Failed to void filing"
+              );
             }
-          },
+          }
         },
       ]
     );
@@ -577,6 +604,42 @@ export default function VatFilingHistory({ onNavigate }) {
 
     const score = Number(audit.auditScore || 0);
     const missing = Number(audit.missing || 0);
+    const transactionCount = Number(audit.transactionCount || 0);
+
+    const noTransactions =
+      audit.auditReadiness === "no_transactions" ||
+      transactionCount === 0;
+
+    if (noTransactions) {
+      const message =
+        `Audit Status: N/A - NO TRANSACTIONS\n` +
+        `Missing Documents: ${missing}\n\n` +
+        "This filing contains no transactions for the selected period. Continue generating the filing pack?";
+
+      if (
+        Platform.OS === "web" &&
+        typeof window !== "undefined" &&
+        typeof window.confirm === "function"
+      ) {
+        const confirmed = window.confirm(message);
+
+        if (confirmed) {
+          handleDownloadFilingPack(filingId);
+        }
+
+        return;
+      }
+
+      Alert.alert("Filing Pack", message, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Continue",
+          onPress: () => handleDownloadFilingPack(filingId),
+        },
+      ]);
+
+      return;
+    }
 
     if (score < 80 || missing > 0) {
       const message =
@@ -1134,7 +1197,10 @@ export default function VatFilingHistory({ onNavigate }) {
                       <View style={styles.colAudit}>
                         <Text style={{ fontWeight: "700" }}>
                           {auditScores[f.id]
-                            ? `${auditScores[f.id].auditScore}%`
+                            ? auditScores[f.id].auditReadiness === "no_transactions" ||
+                              auditScores[f.id].transactionCount === 0
+                              ? "N/A"
+                              : `${auditScores[f.id].auditScore}%`
                             : "..."}
                         </Text>
                       </View>
@@ -1231,12 +1297,18 @@ export default function VatFilingHistory({ onNavigate }) {
                         )}
 
                         {canDeleteFiling(f) ? (
-                          <TouchableOpacity
-                            style={styles.actionRed}
-                            onPress={() => handleDelete(f.id)}
+                          <Pressable
+                            style={({ pressed }) => [
+                              styles.actionRed,
+                              pressed && { opacity: 0.7 },
+                            ]}
+                            onPress={() => {
+                              console.log("DELETE PRESSED", f.id);
+                              handleDelete(f.id);
+                            }}
                           >
                             <Text style={styles.actionText}>Delete</Text>
-                          </TouchableOpacity>
+                          </Pressable>
                         ) : (
                           <View style={styles.actionGray}>
                             <Text style={styles.actionText}>Protected</Text>
@@ -1440,11 +1512,13 @@ export default function VatFilingHistory({ onNavigate }) {
                   {(selectedFiling.status === "draft" || !selectedFiling.status) && (
                     <TouchableOpacity
                       style={styles.actionGreen}
-                      onPress={() => handleProtectedSubmit(selectedFiling.id)}
+                      onPress={() => {
+                        console.log("SUBMIT BUTTON CLICKED", selectedFiling?.id);
+                        handleSubmitFiling(selectedFiling.id);
+                      }}
                     >
                       <Text style={styles.actionText}>Submit Filing</Text>
-                    </TouchableOpacity>
-                  )}
+                    </TouchableOpacity>)}
 
                   {(selectedFiling.status === "draft" || !selectedFiling.status) && (
                     <TouchableOpacity

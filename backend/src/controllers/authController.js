@@ -41,13 +41,7 @@ exports.login = async (req, res) => {
     }
     const user = result.rows[0];
 
-    console.log("USER RECORD:");
-    console.log(user);
-
     console.log("USER FOUND:", user.id);
-
-    console.log("PASSWORD FROM LOGIN:", password);
-    console.log("HASH FROM DB:", user.password);
 
     const isMatch = await bcrypt.compare(
       password,
@@ -62,11 +56,6 @@ exports.login = async (req, res) => {
     }
 
     console.log("CREATING JWT");
-
-    console.log(
-      "SIGNING JWT WITH:",
-      process.env.JWT_SECRET
-    );
 
     const token = jwt.sign(
       { id: user.id },

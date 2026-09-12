@@ -1047,7 +1047,9 @@ exports.getFilingPackPdf = async (req, res) => {
         c.email AS company_email,
         c.phone AS company_phone,
         c.address AS company_address,
-        c.tin AS company_tin
+        c.tin AS company_tin,
+        c.bin AS company_bin,
+        c.vat_number AS company_vat_number
       FROM vat_filings vf
       LEFT JOIN companies c ON c.id = vf.company_id
       WHERE vf.id = $1
@@ -1065,8 +1067,12 @@ exports.getFilingPackPdf = async (req, res) => {
     const companyName = row.company_name || `Company #${filing.companyId}`;
     const companyBrand = companyName.toUpperCase();
     const tin = filing.tin || row.company_tin || "";
+    const bin = row.company_bin || "";
+    const vatNumber = row.company_vat_number || "";
 
     const safeTin = tin || "Not provided";
+    const safeBin = bin || "Not provided";
+    const safeVatNumber = vatNumber || "Not provided";
     const safeAuthorizedOfficer =
       filing.authorizedOfficer || "Not provided";
     const safePositionTitle =
@@ -1128,6 +1134,18 @@ exports.getFilingPackPdf = async (req, res) => {
       })}`;
 
     const getAuditRisk = () => {
+      if (
+        packData.audit.auditReadiness === "no_transactions" ||
+        packData.stats.transactionCount === 0
+      ) {
+        return {
+          label: "N/A - NO TRANSACTIONS",
+          color: "#475569",
+          background: "#F1F5F9",
+          scoreDisplay: "N/A",
+        };
+      }
+
       if (packData.audit.auditScore >= 90) {
         return {
           label: "LOW RISK",
@@ -1162,7 +1180,7 @@ exports.getFilingPackPdf = async (req, res) => {
       if (available < needed) {
         doc.addPage();
         doc.y = doc.page.margins.top + 20;
-        return true;          // page break occurred
+        return true; // page break occurred
       }
 
       return false;
@@ -1364,37 +1382,46 @@ exports.getFilingPackPdf = async (req, res) => {
 
     doc.moveDown(0.5);
 
+    const bannerY = doc.y;
+
     doc
-      .roundedRect(doc.page.margins.left, doc.y, pageWidth, 82, 12)
+      .roundedRect(doc.page.margins.left, bannerY, pageWidth, 82, 12)
       .fillAndStroke("#0F3D91", "#0F3D91");
 
     doc
       .font("Helvetica-Bold")
       .fontSize(22)
       .fillColor("#FFFFFF")
-      .text(companyBrand, doc.page.margins.left + 18, doc.y + 16, {
-        width: pageWidth - 36,
-      });
-
-    doc
-      .font("Helvetica")
-      .fontSize(11)
-      .fillColor("#DBEAFE")
       .text(
-        "Audit-Ready VAT Filing Pack",
+        companyBrand,
         doc.page.margins.left + 18,
-        doc.y + 44,
+        bannerY + 15,
         {
           width: pageWidth - 36,
         }
       );
 
-    doc.y += 98;
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(11)
+      .fillColor("#DBEAFE")
+      .text(
+        "Audit-Ready VAT Filing Pack",
+        doc.page.margins.left + 18,
+        bannerY + 50,
+        {
+          width: pageWidth - 36,
+        }
+      );
+
+    doc.y = bannerY + 110;
 
     drawInfoBox([
       { label: "Filing ID", value: filing.id },
       { label: "Company", value: companyName },
       { label: "TIN", value: safeTin },
+      { label: "BIN", value: safeBin },
+      { label: "VAT Registration Number", value: safeVatNumber },
       { label: "Email", value: row.company_email || "-" },
       { label: "Phone", value: row.company_phone || "-" },
       { label: "Address", value: row.company_address || "-" },
@@ -1460,9 +1487,13 @@ exports.getFilingPackPdf = async (req, res) => {
       .font("Helvetica-Bold")
       .fontSize(18)
       .fillColor(auditRisk.color)
-      .text(`${packData.audit.auditScore}%`, auditBoxX + 16, auditBoxY + 14, {
-        width: 90,
-      });
+      .text(
+        auditRisk.scoreDisplay || `${packData.audit.auditScore}%`,
+        auditBoxX + 16,
+        auditBoxY + 14,
+        {
+          width: 90,
+        });
 
     doc
       .font("Helvetica-Bold")
@@ -1502,8 +1533,8 @@ exports.getFilingPackPdf = async (req, res) => {
         value: auditRisk.label,
       },
       {
-        label: "Audit Score",
-        value: `${packData.audit.auditScore}%`,
+      label: "Audit Score",
+      value: auditRisk.scoreDisplay || `${packData.audit.auditScore}%`,
       },
       {
         label: "Document Coverage",
@@ -1754,6 +1785,32 @@ exports.lockFiling = async (req, res) => {
       [filingId]
     );
 
+    // Audit log for filing lock
+    await pool.query(
+      `
+  INSERT INTO audit_activity_log
+  (company_id, filing_id, user_id, action, details)
+  VALUES ($1, $2, $3, $4, $5)
+  `,
+      [
+        result.rows[0].company_id,
+        filingId,
+        req.user?.id || 0,
+        "FILING_LOCKED",
+        JSON.stringify({
+          previousStatus: currentStatus,
+          newStatus: "locked",
+          changedAt: new Date().toISOString(),
+          lockedBy: req.user?.id || 0,
+          lockedByRole: req.user?.role || "unknown",
+          auditScore,
+          missingDocumentCount,
+          unlinkedDocumentCount,
+          transactionCount,
+        }),
+      ]
+    );
+
     return res.json({
       message: "Filing locked successfully",
       filing: result.rows[0],
@@ -1771,6 +1828,36 @@ exports.updateFilingStatus = async (req, res) => {
   try {
     const { filingId } = req.params;
     let { status } = req.body;
+
+    // =====================================================
+    // HARDENING: Server-side audit readiness enforcement
+    // =====================================================
+    if (status === "submitted") {
+      const packData = await buildFilingPackData(filingId);
+
+      const auditScore = Number(packData.audit?.auditScore || 0);
+      const missingDocumentCount = Number(
+        packData.stats?.missingDocumentCount || 0
+      );
+
+      // Hard block below minimum threshold
+      if (auditScore < 80) {
+        return res.status(400).json({
+          error: "Audit score below minimum threshold",
+          auditScore,
+          missingDocumentCount,
+        });
+      }
+
+      // Hard block if supporting documents are missing
+      if (missingDocumentCount > 0) {
+        return res.status(400).json({
+          error: "Supporting documents are missing for this filing",
+          auditScore,
+          missingDocumentCount,
+        });
+      }
+    }
 
     // Normalize status so "Draft", "SUBMITTED", etc. do not break the backend
     status = String(status || "").toLowerCase().trim();
@@ -1891,45 +1978,64 @@ exports.updateFilingStatus = async (req, res) => {
 exports.deleteFiling = async (req, res) => {
   try {
     const { filingId } = req.params;
+    const userId = req.user?.id;
 
-    const existing = await pool.query(
-      `
-      SELECT id, status
-      FROM vat_filings
-      WHERE id = $1
-      `,
+    // Get current filing
+    const existingResult = await pool.query(
+      `SELECT id, company_id, status
+       FROM vat_filings
+       WHERE id = $1`,
       [filingId]
     );
 
-    if (existing.rows.length === 0) {
+    if (existingResult.rows.length === 0) {
       return res.status(404).json({ error: "Filing not found" });
     }
 
-    if (
-      ["locked", "submitted", "void"].includes(
-        existing.rows[0].status
-      )
-    ) {
+    const filing = existingResult.rows[0];
+    const currentStatus = String(filing.status || "").toLowerCase();
+
+    // Protect submitted, locked, or already voided filings
+    if (["submitted", "locked", "voided"].includes(currentStatus)) {
       return res.status(400).json({
         error:
           "This filing cannot be voided because it is locked, submitted, or already voided",
       });
     }
 
-    const result = await pool.query(
-      `
-      UPDATE vat_filings
-      SET status='void'
-      WHERE id=$1
-      RETURNING id
-      `,
+    // Soft delete (void)
+    await pool.query(
+      `UPDATE vat_filings
+       SET status = 'voided',
+           voided_at = NOW()
+       WHERE id = $1`,
       [filingId]
     );
 
+    // Write audit log
+    if (userId) {
+      await pool.query(
+        `INSERT INTO audit_activity_log
+         (company_id, filing_id, user_id, action, details)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          filing.company_id,
+          filingId,
+          userId,
+          "VOID_FILING",
+          JSON.stringify({
+            previousStatus: filing.status,
+            newStatus: "voided",
+            voidedAt: new Date().toISOString(),
+          }),
+        ]
+      );
+    }
+
     return res.json({
-      "message": "Filing voided successfully",
-      id: result.rows[0].id,
-      status: result.rows[0].status,
+      message: "Filing voided successfully",
+      filingId: Number(filingId),
+      status: "voided",
     });
   } catch (error) {
     console.error("Error deleting filing:", error);

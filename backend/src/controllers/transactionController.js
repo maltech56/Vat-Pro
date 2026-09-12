@@ -412,7 +412,6 @@ exports.generateVatReturnPdf = async (req, res) => {
   const {
     startDate,
     endDate,
-    tin,
     filingPeriodLabel,
     authorizedOfficer,
     positionTitle,
@@ -629,7 +628,7 @@ exports.generateVatReturnPdf = async (req, res) => {
 
     const companyAccess = await pool.query(
       `
-      SELECT c.id, c.name, c.tin
+      SELECT c.id, c.name, c.tin, c.bin, c.vat_number
       FROM companies c
       JOIN user_companies uc ON uc.company_id = c.id
       WHERE c.id = $1 AND uc.user_id = $2
@@ -644,7 +643,10 @@ exports.generateVatReturnPdf = async (req, res) => {
     const company = companyAccess.rows[0];
     const companyName = company.name || `Company ${companyId}`;
 
-    const resolvedTin = tin || company.tin || "Not provided";
+    const resolvedTin = company.tin || "Not provided";
+    const resolvedBin = company.bin || "Not provided";
+    const resolvedVatNumber = company.vat_number || "Not provided";
+
     const resolvedFilingPeriodLabel =
       filingPeriodLabel || `${startDate} to ${endDate}`;
     const resolvedAuthorizedOfficer = authorizedOfficer || "________________";
@@ -765,6 +767,8 @@ exports.generateVatReturnPdf = async (req, res) => {
 
     drawLabelValueRow(doc, "Company", companyName);
     drawLabelValueRow(doc, "TIN", resolvedTin);
+    drawLabelValueRow(doc, "BIN", resolvedBin);
+    drawLabelValueRow(doc, "VAT Registration Number", resolvedVatNumber);
     drawLabelValueRow(doc, "Filing Period", resolvedFilingPeriodLabel);
     drawLabelValueRow(doc, "Authorized Officer", resolvedAuthorizedOfficer);
     drawLabelValueRow(doc, "Position Title", resolvedPositionTitle);

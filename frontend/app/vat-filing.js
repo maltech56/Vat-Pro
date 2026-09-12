@@ -773,7 +773,7 @@ export default function VatFilingScreen({
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.pageTitle}>
-        🚨 TEST BUILD 2026-07-24 🚨
+        VAT Filing
       </Text>
       <Text style={styles.subTitle}>
         Bahamas VAT return preparation workspace

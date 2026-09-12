@@ -455,7 +455,6 @@ export default function TransactionsPage() {
       params.append("startDate", start);
       params.append("endDate", end);
       params.append("filingPeriodLabel", filingPeriodLabel);
-      params.append("tin", company?.tin || "");
       params.append("authorizedOfficer", "Authorized Officer");
       params.append("positionTitle", "Manager");
 

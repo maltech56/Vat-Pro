@@ -16,7 +16,10 @@ exports.getSettings = async (req, res) => {
         name,
         email,
         phone,
-        address
+        address,
+        tin,
+        bin,
+        vat_number
       FROM companies
       WHERE id = $1
       `,
@@ -47,6 +50,9 @@ exports.getSettings = async (req, res) => {
         email: company.email,
         phone: company.phone,
         address: company.address,
+        tin: company.tin || "",
+        bin: company.bin || "",
+        vatNumber: company.vat_number || "",
       },
       settings: {
         defaultVatRate: Number(settings.default_vat_rate ?? 10),
@@ -59,6 +65,8 @@ exports.getSettings = async (req, res) => {
         currency: settings.currency || "BSD",
 
         taxId: settings.tax_id || "",
+
+        bin: company.bin || "",
 
         vatNumber: settings.vat_registration_number || "",
 
@@ -109,6 +117,7 @@ exports.updateSettings = async (req, res) => {
     email,
     phone,
     address,
+    bin,
     filingFrequency,
     vatDueDay,
     currency,
@@ -164,10 +173,18 @@ exports.updateSettings = async (req, res) => {
         name = COALESCE($1, name),
         email = COALESCE($2, email),
         phone = COALESCE($3, phone),
-        address = COALESCE($4, address)
-      WHERE id = $5
+        address = COALESCE($4, address),
+        bin = COALESCE(NULLIF($5, ''), bin)
+      WHERE id = $6
       `,
-      [name, email, phone, address, companyId]
+      [
+        name,
+        email,
+        phone,
+        address,
+        bin,
+        companyId,
+      ]
     );
 
     const previousSettingsResult = await client.query(
@@ -289,6 +306,8 @@ exports.updateSettings = async (req, res) => {
         c.phone,
         c.address,
         c.tin,
+        c.bin,
+        c.vat_number,
         cs.default_vat_rate,
         cs.filing_frequency,
         cs.currency,
@@ -326,6 +345,9 @@ exports.updateSettings = async (req, res) => {
         email: company.email,
         phone: company.phone,
         address: company.address,
+        tin: company.tin || "",
+        bin: company.bin || "",
+        vatNumber: company.vat_number || "",
       },
       settings: {
         defaultVatRate: 10,
@@ -333,6 +355,7 @@ exports.updateSettings = async (req, res) => {
         vatDueDay: Number(settings.vat_due_day ?? 28),
         currency: settings.currency || "BSD",
         taxId: settings.tax_id || "",
+        bin: company.bin || "",
         vatNumber: settings.vat_registration_number || "",
         autoLockSubmittedFilings:
           settings.auto_lock_submitted_filings ?? true,

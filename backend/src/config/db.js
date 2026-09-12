@@ -4,7 +4,6 @@ require("dotenv").config();
 const databaseUrl = process.env.DATABASE_URL || "";
 
 console.log("================================");
-console.log("DATABASE_URL:", databaseUrl);
 
 const dbName =
   databaseUrl.split("/").pop().split("?")[0];

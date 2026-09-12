@@ -32,6 +32,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
   const [companyForm, setCompanyForm] = useState({
     companyName: "",
     taxId: "",
+    bin: "",
     vatRegistrationNumber: "",
     businessEmail: "",
     businessPhone: "",
@@ -89,6 +90,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
     setCompanyForm({
       companyName: "",
       taxId: "",
+      bin: "",
       vatRegistrationNumber: "",
       businessEmail: "",
       businessPhone: "",
@@ -151,11 +153,15 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
         `/settings/company/${company.id}`
       );
 
+      console.log("SETTINGS DATA:", data);
+
       if (data) {
         setCompanyForm({
           companyName: data.company?.name || "",
-          taxId: data.settings?.taxId || "",
-          vatRegistrationNumber: data.settings?.vatNumber || "",
+          taxId: data.settings?.taxId || data.company?.tin || "",
+          bin: data.settings?.bin || data.company?.bin || "",
+          vatRegistrationNumber:
+            data.settings?.vatNumber || data.company?.vatNumber || "",
           businessEmail: data.company?.email || "",
           businessPhone: data.company?.phone || "",
           address: data.company?.address || "",
@@ -205,7 +211,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
   };
 
   const handleSaveSettings = async () => {
-      try {
+    try {
       const token = getToken();
       const company = selectedCompany;
 
@@ -223,6 +229,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       const businessEmail = companyForm.businessEmail.trim();
       const businessPhone = companyForm.businessPhone.trim();
       const taxId = companyForm.taxId.trim();
+      const bin = companyForm.bin.trim();
       const vatNumber = companyForm.vatRegistrationNumber.trim();
 
       // Normalize casing
@@ -238,17 +245,17 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       const currency = vatForm.currency.trim().toUpperCase();
 
       if (!companyName) {
-      Alert.alert("Validation Error", "Company name is required.");
+        Alert.alert("Validation Error", "Company name is required.");
         return;
       }
 
       if (!taxId) {
-      Alert.alert("Validation Error", "Tax ID / TIN is required.");
+        Alert.alert("Validation Error", "Tax ID / TIN is required.");
         return;
       }
 
       if (!vatNumber) {
-       Alert.alert("Validation Error", "VAT registration number is required.");
+        Alert.alert("Validation Error", "VAT registration number is required.");
         return;
       }
 
@@ -297,6 +304,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       }
 
       setSaving(true);
+
       const data = await apiFetch(
         `/settings/company/${company.id}`,
         {
@@ -310,6 +318,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
 
             // Tax
             taxId: companyForm.taxId.trim(),
+            bin: companyForm.bin.trim(),
             vatNumber: companyForm.vatRegistrationNumber.trim(),
 
             // VAT
@@ -329,7 +338,8 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       await fetchSettings();
       Alert.alert("Success", "Settings saved successfully.");
     } catch (error) {
-      console.error("handleSaveSettings error:", error);
+      console.error("SETTINGS SAVE FAILED:", error);
+      console.error("SETTINGS SAVE ERROR MESSAGE:", error?.message);
       Alert.alert("Error", error.message || "Failed to save settings");
     } finally {
       setSaving(false);
@@ -376,7 +386,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
       setChangingPassword(true);
 
       const data = await apiFetch("/auth/change-password", {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,
@@ -652,6 +662,23 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
                 setCompanyForm((prev) => ({ ...prev, taxId: value }))
               }
               placeholder="Enter tax ID"
+            />
+          </View>
+
+          <View style={styles.fieldBlock}>
+            <Text style={styles.label}>
+              Bahamas Identification Number (BIN)
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={companyForm.bin}
+              onChangeText={(value) =>
+                setCompanyForm((prev) => ({
+                  ...prev,
+                  bin: value,
+                }))
+              }
+              placeholder="Enter Bahamas Identification Number"
             />
           </View>
 
