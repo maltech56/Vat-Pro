@@ -4,7 +4,19 @@ const createDefaultCompanySettings = require("../utils/createDefaultCompanySetti
 // Create company
 exports.createCompany = async (req, res) => {
   const userId = req.user.id;
-  const { name, tin, bin, vat_number, email, phone, address } = req.body;
+
+  const {
+    name,
+    tin,
+    bin,
+    vat_number,
+    vatNumber,
+    email,
+    phone,
+    address,
+  } = req.body;
+
+  const resolvedVatNumber = vat_number || vatNumber || null;
 
   if (!name) {
     return res.status(400).json({ error: "Company name is required" });
@@ -34,7 +46,7 @@ RETURNING *
         name,
         tin || null,
         bin || null,
-        vat_number || null,
+        resolvedVatNumber,
         email || null,
         phone || null,
         address || null,

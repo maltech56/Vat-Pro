@@ -21,6 +21,7 @@ export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
     name: "",
     tin: "",
     bin: "",
+    vatNumber: "",
     email: "",
     phone: "",
     address: "",
@@ -40,6 +41,7 @@ export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
       name: "",
       tin: "",
       bin: "",
+      vatNumber: "",
       email: "",
       phone: "",
       address: "",
@@ -76,8 +78,9 @@ export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
         },
         body: JSON.stringify({
           name: form.name.trim(),
-	  tin: form.tin.trim(),
+          tin: form.tin.trim(),
           bin: form.bin.trim(),
+          vat_number: form.vatNumber.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
           address: form.address.trim(),
@@ -128,17 +131,17 @@ export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
           />
         </View>
 
-	<View style={styles.formGroup}>
-        <Text style={styles.label}>Tax Identification Number (TIN)</Text>
-        <TextInput
-          style={styles.input}
-          value={form.tin}
-          onChangeText={(value) =>
-            setForm((prev) => ({ ...prev, tin: value }))
-          }
-          placeholder="Enter TIN"
-        />
-	</View>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Tax Identification Number (TIN)</Text>
+          <TextInput
+            style={styles.input}
+            value={form.tin}
+            onChangeText={(value) =>
+              setForm((prev) => ({ ...prev, tin: value }))
+            }
+            placeholder="Enter TIN"
+          />
+        </View>
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>
@@ -149,6 +152,17 @@ export default function CreateCompanyScreen({ onCompanyCreated, onCancel }) {
             value={form.bin}
             onChangeText={(value) => handleChange("bin", value)}
             placeholder="Enter Bahamas Identification Number"
+            placeholderTextColor="#94A3B8"
+          />
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>VAT Registration Number</Text>
+          <TextInput
+            style={styles.input}
+            value={form.vatNumber}
+            onChangeText={(value) => handleChange("vatNumber", value)}
+            placeholder="Enter VAT Registration Number"
             placeholderTextColor="#94A3B8"
           />
         </View>
