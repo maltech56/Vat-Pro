@@ -42,6 +42,7 @@ export default function VatFilingScreen({
   const [positionTitle, setPositionTitle] = useState("");
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [filingSuccessMessage, setFilingSuccessMessage] = useState("");
   // ==========================================
   // Draft Editing
   // ==========================================
@@ -491,6 +492,10 @@ export default function VatFilingScreen({
 
         window.URL.revokeObjectURL(fileUrl);
 
+        setFilingSuccessMessage(
+          `Filing Pack generated successfully. Draft Filing #${filingId} saved.`
+        );
+
         Alert.alert("Success", "Filing pack generated successfully.");
         return;
       }
@@ -735,6 +740,10 @@ export default function VatFilingScreen({
         a.remove();
         window.URL.revokeObjectURL(fileUrl);
 
+        setFilingSuccessMessage(
+          `Filing Pack generated successfully. Draft Filing #${filingId} saved.`
+        );
+
         Alert.alert("Success", "Filing pack generated successfully.");
         return;
       }
@@ -778,6 +787,37 @@ export default function VatFilingScreen({
       <Text style={styles.subTitle}>
         Bahamas VAT return preparation workspace
       </Text>
+
+{filingSuccessMessage ? (
+  <View
+    style={{
+      backgroundColor: "#ecfdf5",
+      borderColor: "#86efac",
+      borderWidth: 1,
+      padding: 12,
+      borderRadius: 10,
+      marginBottom: 12,
+    }}
+  >
+    <Text
+      style={{
+        fontWeight: "700",
+        color: "#166534",
+      }}
+    >
+      Filing Pack Ready
+    </Text>
+
+    <Text
+      style={{
+        color: "#166534",
+        marginTop: 4,
+      }}
+    >
+      {filingSuccessMessage}
+    </Text>
+  </View>
+) : null}
 
       {auditReadiness && auditReadiness.auditScore < 90 && (
         <View style={{
