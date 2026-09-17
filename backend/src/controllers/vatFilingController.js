@@ -1198,12 +1198,23 @@ exports.getFilingPackPdf = async (req, res) => {
 
     const drawSectionTitle = (title) => {
       ensureSpace(60);
-      y = doc.y;
+
+      const titleY = doc.y;
+
       doc
         .font("Helvetica-Bold")
         .fontSize(13)
         .fillColor("#0F172A")
-        .text(title.toUpperCase(), { align: "left" });
+        .text(
+          title.toUpperCase(),
+          doc.page.margins.left,
+          titleY,
+          {
+            width: pageWidth,
+            align: "left",
+          }
+        );
+
       doc.moveDown(0.35);
       drawDivider();
     };
