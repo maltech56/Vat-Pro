@@ -119,20 +119,20 @@ export default function VatFilingScreen({
 
   const getDateRange = () => {
     if (periodType === "monthly") {
-      if (!selectedMonth || !selectedMonth.includes("-")) {
+      const monthValue = String(selectedMonth || "").trim();
+
+      // Do not fetch while the user is still typing the month.
+      // Only accept a complete YYYY-MM value with month 01 through 12.
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthValue)) {
         return { start: "", end: "" };
       }
 
-      const [year, month] = selectedMonth.split("-");
-
-      if (!year || !month) {
-        return { start: "", end: "" };
-      }
+      const [year, month] = monthValue.split("-");
 
       const start = `${year}-${month}-01`;
       const endDateObj = new Date(Number(year), Number(month), 0);
 
-      if (isNaN(endDateObj.getTime())) {
+      if (Number.isNaN(endDateObj.getTime())) {
         return { start: "", end: "" };
       }
 
@@ -788,36 +788,36 @@ export default function VatFilingScreen({
         Bahamas VAT return preparation workspace
       </Text>
 
-{filingSuccessMessage ? (
-  <View
-    style={{
-      backgroundColor: "#ecfdf5",
-      borderColor: "#86efac",
-      borderWidth: 1,
-      padding: 12,
-      borderRadius: 10,
-      marginBottom: 12,
-    }}
-  >
-    <Text
-      style={{
-        fontWeight: "700",
-        color: "#166534",
-      }}
-    >
-      Filing Pack Ready
-    </Text>
+      {filingSuccessMessage ? (
+        <View
+          style={{
+            backgroundColor: "#ecfdf5",
+            borderColor: "#86efac",
+            borderWidth: 1,
+            padding: 12,
+            borderRadius: 10,
+            marginBottom: 12,
+          }}
+        >
+          <Text
+            style={{
+              fontWeight: "700",
+              color: "#166534",
+            }}
+          >
+            Filing Pack Ready
+          </Text>
 
-    <Text
-      style={{
-        color: "#166534",
-        marginTop: 4,
-      }}
-    >
-      {filingSuccessMessage}
-    </Text>
-  </View>
-) : null}
+          <Text
+            style={{
+              color: "#166534",
+              marginTop: 4,
+            }}
+          >
+            {filingSuccessMessage}
+          </Text>
+        </View>
+      ) : null}
 
       {auditReadiness && auditReadiness.auditScore < 90 && (
         <View style={{
