@@ -349,8 +349,6 @@ export default function VatFilingScreen({
 
       const data = await response.json();
 
-      console.log("Draft received", data);
-
       if (!response.ok) {
         throw new Error(data.error || "Failed to load draft filing");
       }
@@ -390,10 +388,6 @@ export default function VatFilingScreen({
 
   const continueGenerate = async () => {
 
-    console.log("====================================");
-    console.log("continueGenerate() STARTED");
-    console.log("====================================");
-
     try {
       // duplicate ONLY the part AFTER audit checks
 
@@ -401,9 +395,6 @@ export default function VatFilingScreen({
 
       const token = getToken();
       const { start, end } = getDateRange();
-
-      console.log("About to POST to:", `${API_BASE}/vat-filings/save`);
-      console.log("Posting VAT filing...");
 
       const saveResponse = await fetch(`${API_BASE}/vat-filings/save`, {
         method: "POST",
@@ -435,11 +426,6 @@ export default function VatFilingScreen({
           declarationAccepted,
         }),
       });
-
-      console.log("====================================");
-      console.log("Save response status:", saveResponse.status);
-      console.log("Save response OK:", saveResponse.ok);
-      console.log("====================================");
 
       if (saveResponse.status === 409) {
         const data = await saveResponse.json();
@@ -526,27 +512,16 @@ export default function VatFilingScreen({
 
   const handleGenerate = async () => {
     try {
-      console.log("====================================");
-      console.log("STEP 1");
-      console.log("handleGenerate() ENTERED");
-      console.log("isEditMode:", isEditMode);
-      console.log("editingFilingId:", editingFilingId);
-      console.log("auditReadiness:", auditReadiness);
-      console.log("====================================");
 
       const token = getToken();
 
       if (!token) {
-
-        console.log("STOPPED: Missing token");
 
         Alert.alert("Missing token", "Please log in again.");
         return;
       }
 
       if (!selectedCompany?.id) {
-
-        console.log("STOPPED: No selected company");
 
         Alert.alert("Missing company", "No company selected.");
         return;
@@ -556,17 +531,11 @@ export default function VatFilingScreen({
 
       if (!tin.trim()) {
 
-        console.log("STOPPED: Missing TIN");
-
         Alert.alert("Missing TIN", "Please enter the company TIN.");
         return;
       }
 
       if (!start || !end) {
-
-        console.log("STOPPED: Missing filing period");
-        console.log("start:", start);
-        console.log("end:", end);
 
         Alert.alert(
           "Missing filing period",
@@ -577,8 +546,6 @@ export default function VatFilingScreen({
 
       if (!authorizedOfficer.trim()) {
 
-        console.log("STOPPED: Missing Authorized Officer");
-
         Alert.alert(
           "Missing authorized officer",
           "Please enter the name of the authorized officer."
@@ -587,8 +554,6 @@ export default function VatFilingScreen({
       }
 
       if (!positionTitle.trim()) {
-
-        console.log("STOPPED: Missing Position");
 
         Alert.alert(
           "Missing position title",
@@ -599,8 +564,6 @@ export default function VatFilingScreen({
       }
 
       if (!declarationAccepted) {
-
-        console.log("STOPPED: Declaration not accepted");
 
         Alert.alert(
           "Declaration required",
@@ -615,16 +578,7 @@ export default function VatFilingScreen({
 
       // 🔴 HARD BLOCK — must fix
 
-      console.log("====================================");
-      console.log("STEP 2");
-      console.log("Audit Check");
-      console.log("auditReadiness =", auditReadiness);
-      console.log("====================================");
-
       if (auditReadiness && auditReadiness.auditScore < 50) {
-
-        console.log("Audit HARD BLOCK triggered");
-        console.log("Audit Score:", auditReadiness.auditScore);
 
         Alert.alert(
           "Audit Readiness Too Low",
@@ -642,17 +596,11 @@ export default function VatFilingScreen({
       // 🟠 WARNING — allow override
       if (auditReadiness && auditReadiness.auditScore < 80) {
 
-        console.log("Audit WARNING triggered");
-        console.log("Audit Score:", auditReadiness.auditScore);
-
-        console.log("TEMPORARY: bypassing warning dialog");
-
         await continueGenerate();
 
         return;
       }
       let filingId = null;
-      console.log("No audit warning - continuing directly to save.");
 
       const saveResponse = await fetch(`${API_BASE}/vat-filings/save`, {
         method: "POST",

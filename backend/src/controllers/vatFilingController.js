@@ -95,39 +95,6 @@ const buildFilingPackData = async (filingId) => {
     throw new Error("Invalid filing period");
   }
 
-  console.log("====================================");
-  console.log("BUILD FILING PACK (SNAPSHOT)");
-  console.log({
-    filingId: filing.id,
-    companyId: filing.company_id,
-    transactionCount,
-    documentCount,
-    linkedTransactionCount,
-    missingDocumentCount,
-    auditScore,
-    auditReadiness
-  });
-
-  console.log("====================================");
-  console.log("FINAL FILING PACK STATS");
-
-  console.log({
-    filingId: filing.id,
-    companyId: filing.company_id,
-    periodStart: filing.period_start,
-    periodEnd: filing.period_end,
-
-    transactionCount,
-    documentCount,
-    linkedTransactionCount,
-    missingDocumentCount,
-
-    auditScore,
-    auditReadiness,
-  });
-
-  console.log("====================================");
-
   return {
     filing: mapFilingRow(filing),
     transactions,
@@ -367,10 +334,6 @@ const buildVat001Lines = (summary = {}) => {
 
 exports.saveVatFiling = async (req, res) => {
   try {
-    console.log("====================================");
-    console.log("RAW REQUEST BODY");
-    console.log(JSON.stringify(req.body, null, 2));
-    console.log("====================================");
 
     const {
       companyId,
@@ -448,11 +411,6 @@ exports.saveVatFiling = async (req, res) => {
       declarationAccepted: Boolean(declarationAccepted),
     };
 
-    console.log("====================================");
-    console.log("FILING DATA TO SAVE");
-    console.log(JSON.stringify(filingData, null, 2));
-    console.log("====================================");
-
     if (
       Number.isNaN(numericOutputVat) ||
       Number.isNaN(numericInputVat) ||
@@ -480,17 +438,6 @@ exports.saveVatFiling = async (req, res) => {
     const snapshotAudit = snapshot.audit || {};
 
     const snapshotStats = snapshot.stats || {};
-
-    console.log("====================================");
-    console.log("SNAPSHOT CREATED");
-    console.log({
-      transactionCount: snapshot.transactions.length,
-      audit: snapshot.audit,
-      linkedDocuments: snapshot.linkedDocuments.length,
-      missingDocumentWarnings:
-        snapshot.missingDocumentWarnings.length
-    });
-    console.log("====================================");
 
     const existing = await pool.query(
       `
@@ -609,11 +556,6 @@ RETURNING *
           JSON.stringify(snapshot.missingDocumentWarnings)
         ]
       );
-
-      console.log("====================================");
-      console.log("UPDATED DATABASE ROW");
-      console.log(JSON.stringify(updateResult.rows[0], null, 2));
-      console.log("====================================");
 
       return res.json({
         message: "VAT filing updated successfully",
@@ -769,11 +711,6 @@ RETURNING
   `,
       insertParams
     );
-
-    console.log("====================================");
-    console.log("INSERTED DATABASE ROW");
-    console.log(JSON.stringify(insertResult.rows[0], null, 2));
-    console.log("====================================");
 
     return res.status(201).json({
       message: "VAT filing saved successfully",
@@ -1707,14 +1644,6 @@ exports.lockFiling = async (req, res) => {
       packData.stats?.transactionCount || 0
     );
 
-    console.log("===== AUDIT LOCK CHECK =====");
-    console.log({
-      filingId,
-      auditScore,
-      missingDocumentCount,
-      transactionCount,
-    });
-
     if (auditScore < 70) {
       return res.status(400).json({
         error:
@@ -1774,7 +1703,7 @@ exports.lockFiling = async (req, res) => {
       UPDATE vat_filings
       SET status = 'locked'
       WHERE id = $1
-    
+
     RETURNING
     id,
     company_id,
@@ -1928,14 +1857,6 @@ exports.updateFilingStatus = async (req, res) => {
 
       const transactionCount =
         snapshot.transactionCount;
-
-      console.log("===== AUDIT SUBMISSION CHECK =====");
-      console.log({
-        filingId,
-        auditScore,
-        missingDocumentCount,
-        transactionCount,
-      });
 
       if (transactionCount === 0) {
         return res.status(400).json({
