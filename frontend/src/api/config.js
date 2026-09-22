@@ -1,7 +1,4 @@
-const isLocalhost =
-  typeof window !== "undefined" &&
-  window.location.hostname === "localhost";
+const DEFAULT_API_BASE = "https://api.maltechenterprises.com/api";
 
-export const API_BASE = isLocalhost
-  ? "http://localhost:5000/api"
-  : "https://api.maltechenterprises.com/api";   
+export const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE;

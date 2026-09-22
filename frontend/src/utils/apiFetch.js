@@ -1,8 +1,7 @@
+import { API_BASE } from "../api/config";
 import { getToken, forceLogout } from "./session";
 
-export const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "http://localhost:5000/api";
+export { API_BASE };
 
 export const apiFetch = async (endpoint, options = {}) => {
   const token = getToken();
