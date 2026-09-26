@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import { getToken } from "../src/utils/session";
 import { useCompany } from "../context/CompanyContext";
@@ -593,10 +594,46 @@ export default function VatFilingScreen({
         return;
       }
 
-      // 🟠 WARNING — allow override
+      // WARNING — allow draft generation with user confirmation
       if (auditReadiness && auditReadiness.auditScore < 80) {
+        const score = Number(auditReadiness.auditScore || 0);
 
-        await continueGenerate();
+        const message =
+          score < 70
+            ? `Audit Score: ${score}%\n\n` +
+            "You may generate and save this filing pack as a draft, but it cannot be submitted until the audit readiness score reaches at least 70% and the supporting-document requirements are satisfied.\n\n" +
+            "Continue generating the draft filing pack?"
+            : `Audit Score: ${score}%\n\n` +
+            "Audit readiness is below 80%. You may continue generating the filing pack, but you should review the supporting documents before submission.\n\n" +
+            "Continue generating the filing pack?";
+
+        if (
+          Platform.OS === "web" &&
+          typeof window !== "undefined" &&
+          typeof window.confirm === "function"
+        ) {
+          const confirmed = window.confirm(message);
+
+          if (confirmed) {
+            await continueGenerate();
+          }
+
+          return;
+        }
+
+        Alert.alert("Audit Warning", message, [
+          {
+            text: "Review Documents",
+            style: "cancel",
+            onPress: goToUnlinkedDocuments,
+          },
+          {
+            text: "Continue",
+            onPress: () => {
+              continueGenerate();
+            },
+          },
+        ]);
 
         return;
       }
