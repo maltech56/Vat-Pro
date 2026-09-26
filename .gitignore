@@ -70,3 +70,12 @@ app-example
 # Runtime uploaded documents
 # =========================
 backend/uploads/
+
+# =========================
+# Development backup files
+# =========================
+*.bak
+*_WORKING_*.js
+frontend/app_backup/
+*.tmp
+*.temp
