@@ -211,6 +211,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
   };
 
   const handleSaveSettings = async () => {
+    console.log("SAVE SETTINGS CLICKED");
     try {
       const token = getToken();
       const company = selectedCompany;
