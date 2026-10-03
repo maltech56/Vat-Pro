@@ -396,6 +396,37 @@ exports.deleteTransaction = async (req, res) => {
         .json({ message: "Transaction not found or access denied" });
     }
 
+    // Prevent deletion when the transaction is preserved as evidence
+    // in a submitted or locked VAT filing snapshot.
+    const protectedFiling = await pool.query(
+      `
+      SELECT id, status, filing_period_label
+      FROM vat_filings
+      WHERE company_id = $1
+        AND status IN ('submitted', 'locked')
+        AND EXISTS (
+          SELECT 1
+          FROM jsonb_array_elements(
+            COALESCE(supporting_transactions, '[]'::jsonb)
+          ) AS tx
+          WHERE tx->>'id' = $2::text
+        )
+      LIMIT 1
+      `,
+      [txCheck.rows[0].company_id, String(id)]
+    );
+
+    if (protectedFiling.rows.length > 0) {
+      const filing = protectedFiling.rows[0];
+
+      return res.status(409).json({
+        error: "Transaction cannot be deleted because it is part of a submitted or locked VAT filing.",
+        filingId: filing.id,
+        filingStatus: filing.status,
+        filingPeriodLabel: filing.filing_period_label,
+      });
+    }
+
     await pool.query(`DELETE FROM transactions WHERE id = $1`, [id]);
 
     return res.json({ message: "Transaction deleted successfully" });

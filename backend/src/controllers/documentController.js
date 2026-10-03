@@ -513,6 +513,38 @@ exports.deleteDocument = async (req, res) => {
       return res.status(404).json({ error: "Document not found" });
     }
 
+    // Prevent deletion when the document is preserved as evidence
+    // in a submitted or locked VAT filing snapshot.
+    const protectedFiling = await pool.query(
+      `
+      SELECT id, status, filing_period_label
+      FROM vat_filings
+      WHERE company_id = $1
+        AND status IN ('submitted', 'locked')
+        AND EXISTS (
+          SELECT 1
+          FROM jsonb_array_elements(
+            COALESCE(linked_documents, '[]'::jsonb)
+          ) AS doc
+          WHERE doc->>'id' = $2::text
+        )
+      LIMIT 1
+      `,
+      [document.company_id, String(document.id)]
+    );
+
+    if (protectedFiling.rows.length > 0) {
+      const filing = protectedFiling.rows[0];
+
+      return res.status(409).json({
+        error:
+          "Document cannot be deleted because it is part of a submitted or locked VAT filing.",
+        filingId: filing.id,
+        filingStatus: filing.status,
+        filingPeriodLabel: filing.filing_period_label,
+      });
+    }
+
     if (document.file_path) {
       const relativePath = document.file_path.replace(/^\/+/, "");
       const absolutePath = path.join(__dirname, "../../", relativePath);
