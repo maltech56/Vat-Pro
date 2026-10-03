@@ -166,7 +166,7 @@ exports.getAuditDashboard = async (req, res) => {
       });
     }
 
-    if (auditScore < 80) {
+    if (auditScore < 70) {
       blockers.push({
         severity: "medium",
         title: "Audit Score Below Filing Threshold",

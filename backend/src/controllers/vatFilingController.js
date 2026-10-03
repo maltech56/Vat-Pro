@@ -1781,7 +1781,7 @@ exports.updateFilingStatus = async (req, res) => {
       );
 
       // Hard block below minimum threshold
-      if (auditScore < 80) {
+      if (auditScore < 70) {
         return res.status(400).json({
           error: "Audit score below minimum threshold",
           auditScore,
