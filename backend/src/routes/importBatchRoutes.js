@@ -8,6 +8,7 @@ const importBatchController = require("../controllers/importBatchController");
 router.get(
   "/company/:companyId",
   authMiddleware,
+  companyAccess("admin", "staff", "auditor"),
   importBatchController.getCompanyImportBatches
 );
 
