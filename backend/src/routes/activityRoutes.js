@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../config/db");
 
+const authMiddleware = require("../middleware/authMiddleware");
+const requireSystemAdmin = require("../middleware/requireSystemAdmin");
+
 console.log("✅ ACTIVITY ROUTES LOADED");
 
 router.get("/test", (req, res) => {
@@ -11,32 +14,31 @@ router.get("/test", (req, res) => {
   });
 });
 
-router.get("/:leadId", async (req, res) => {
+router.get(
+  "/:leadId",
+  authMiddleware,
+  requireSystemAdmin,
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM lead_activities
+        WHERE lead_id = $1
+        ORDER BY created_at DESC
+        `,
+        [req.params.leadId]
+      );
 
-  try {
+      res.json(result.rows);
+    } catch (error) {
+      console.error(error);
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM lead_activities
-      WHERE lead_id = $1
-      ORDER BY created_at DESC
-      `,
-      [req.params.leadId]
-    );
-
-    res.json(result.rows);
-
-  } catch (error) {
-
-    console.error(error);
-
-    res.status(500).json({
-      success: false,
-    });
-
+      res.status(500).json({
+        success: false,
+      });
+    }
   }
-
-});
+);
 
 module.exports = router;

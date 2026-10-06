@@ -72,9 +72,7 @@ exports.updateLeadStatus = async (req, res) => {
 
 };
 exports.updateLeadNotes = async (req, res) => {
-
   try {
-
     const { id } = req.params;
 
     const notes =
@@ -83,14 +81,15 @@ exports.updateLeadNotes = async (req, res) => {
     const next_followup =
       req.body.next_followup ?? null;
 
-    await pool.query(
+    const updateResult = await pool.query(
       `
-  UPDATE demo_requests
-  SET
-    notes = COALESCE($1, notes),
-    next_followup = COALESCE($2, next_followup)
-  WHERE id = $3
-  `,
+      UPDATE demo_requests
+      SET
+        notes = COALESCE($1, notes),
+        next_followup = COALESCE($2, next_followup)
+      WHERE id = $3
+      RETURNING id
+      `,
       [
         notes,
         next_followup,
@@ -98,15 +97,12 @@ exports.updateLeadNotes = async (req, res) => {
       ]
     );
 
-    res.json({
-      success: true,
-    });
-
-    console.log(
-      "LOGGING STATUS CHANGE:",
-      id,
-      status
-    );
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
 
     console.log(
       "LOGGING NOTES UPDATE:",
@@ -115,30 +111,34 @@ exports.updateLeadNotes = async (req, res) => {
 
     await pool.query(
       `
-  INSERT INTO lead_activities
-  (
-    lead_id,
-    activity_type,
-    description
-  )
-  VALUES ($1, $2, $3)
-  `,
+      INSERT INTO lead_activities
+      (
+        lead_id,
+        activity_type,
+        description
+      )
+      VALUES ($1, $2, $3)
+      `,
       [
         id,
         "NOTES_UPDATE",
-        "Lead notes updated"
+        "Lead notes updated",
       ]
     );
 
+    return res.json({
+      success: true,
+    });
+
   } catch (error) {
+    console.error(
+      "UPDATE LEAD NOTES ERROR:",
+      error
+    );
 
-    console.error(error);
-
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to update notes",
     });
-
   }
-
 };

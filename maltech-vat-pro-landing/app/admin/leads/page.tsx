@@ -1,50 +1,145 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
 const API_BASE =
     process.env.NODE_ENV === "development"
         ? "http://localhost:5000/api"
         : "https://api.maltechenterprises.com/api";
 
-import { useEffect, useState } from "react";
-
 export default function LeadsPage() {
+    const router = useRouter();
+
     const [leads, setLeads] = useState<any[]>([]);
     const [selectedLead, setSelectedLead] = useState<any>(null);
+    const [search, setSearch] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [accessError, setAccessError] = useState("");
+
+    const getAdminToken = () => {
+        if (typeof window === "undefined") {
+            return null;
+        }
+
+        return localStorage.getItem("adminToken");
+    };
+
+    const clearAdminSession = () => {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminUser");
+    };
+
+    const handleUnauthorized = () => {
+        clearAdminSession();
+        router.replace("/admin/login");
+    };
 
     useEffect(() => {
-        fetch(`${API_BASE}/leads`)
-            .then((res) => res.json())
-            .then((data) => setLeads(data))
-            .catch(console.error);
-    }, []);
+        const token = getAdminToken();
 
-    const [search, setSearch] = useState("");
+        if (!token) {
+            router.replace("/admin/login");
+            return;
+        }
+
+        const loadLeads = async () => {
+            try {
+                const response = await fetch(
+                    `${API_BASE}/leads`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (response.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (response.status === 403) {
+                    setAccessError(
+                        "System administrator access is required."
+                    );
+                    setLoading(false);
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to load leads"
+                    );
+                }
+
+                const data = await response.json();
+
+                setLeads(
+                    Array.isArray(data) ? data : []
+                );
+            } catch (error) {
+                console.error(
+                    "LEADS LOAD ERROR",
+                    error
+                );
+
+                setAccessError(
+                    "Unable to load the Lead Dashboard."
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadLeads();
+    }, [router]);
 
     const updateStatus = async (
         id: string,
         status: string
     ) => {
+        const token = getAdminToken();
 
-        console.log(
-            "STATUS CHANGE CLICKED",
-            id,
-            status
-        );
+        if (!token) {
+            handleUnauthorized();
+            return;
+        }
 
         try {
-
             const response = await fetch(
                 `${API_BASE}/leads/${id}/status`,
                 {
                     method: "PUT",
                     headers: {
-                        "Content-Type": "application/json",
+                        "Content-Type":
+                            "application/json",
+                        Authorization:
+                            `Bearer ${token}`,
                     },
                     body: JSON.stringify({
                         status,
                     }),
                 }
             );
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (response.status === 403) {
+                setAccessError(
+                    "System administrator access is required."
+                );
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    "Failed to update lead status"
+                );
+            }
 
             setLeads((prev) =>
                 prev.map((lead) =>
@@ -53,14 +148,11 @@ export default function LeadsPage() {
                         : lead
                 )
             );
-
         } catch (error) {
-
             console.error(
                 "STATUS ERROR",
                 error
             );
-
         }
     };
 
@@ -69,22 +161,47 @@ export default function LeadsPage() {
         field: string,
         value: string
     ) => {
+        const token = getAdminToken();
+
+        if (!token) {
+            handleUnauthorized();
+            return;
+        }
 
         try {
-
-            await fetch(
+            const response = await fetch(
                 `${API_BASE}/leads/${id}/notes`,
                 {
                     method: "PUT",
                     headers: {
                         "Content-Type":
                             "application/json",
+                        Authorization:
+                            `Bearer ${token}`,
                     },
                     body: JSON.stringify({
                         [field]: value,
                     }),
                 }
             );
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (response.status === 403) {
+                setAccessError(
+                    "System administrator access is required."
+                );
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    "Failed to update lead"
+                );
+            }
 
             setLeads((prev) =>
                 prev.map((lead) =>
@@ -96,13 +213,17 @@ export default function LeadsPage() {
                         : lead
                 )
             );
-
         } catch (error) {
-
-            console.error(error);
-
+            console.error(
+                "LEAD UPDATE ERROR",
+                error
+            );
         }
+    };
 
+    const handleLogout = () => {
+        clearAdminSession();
+        router.replace("/admin/login");
     };
 
     const filteredLeads = leads.filter((lead) => {
@@ -129,14 +250,60 @@ export default function LeadsPage() {
 
     });
 
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="text-lg font-semibold text-slate-600">
+                    Loading Lead Dashboard...
+                </div>
+            </div>
+        );
+    }
+
+    if (accessError) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+                <div className="bg-white rounded-3xl shadow-lg p-8 max-w-md w-full">
+                    <h1 className="text-2xl font-bold mb-4">
+                        Access Denied
+                    </h1>
+
+                    <p className="text-slate-600 mb-6">
+                        {accessError}
+                    </p>
+
+                    <button
+                        onClick={handleLogout}
+                        className="w-full bg-slate-900 text-white rounded-xl p-3 font-semibold"
+                    >
+                        Return to Admin Login
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-slate-50 p-10">
 
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-8">
-                Demo Requests
-            </h1>
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
+                        Demo Requests
+                    </h1>
 
-            <h1>Lead Dashboard</h1>
+                    <p className="text-slate-500 mt-1">
+                        Lead Dashboard
+                    </p>
+                </div>
+
+                <button
+                    onClick={handleLogout}
+                    className="bg-slate-900 text-white px-5 py-3 rounded-xl font-semibold"
+                >
+                    Logout
+                </button>
+            </div>
 
             <input
                 type="text"
