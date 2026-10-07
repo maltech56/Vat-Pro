@@ -1,7 +1,11 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const { Resend } = require("resend");
 const createDefaultCompanySettings = require("../utils/createDefaultCompanySettings");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ================= LOGIN =================
 exports.login = async (req, res) => {
@@ -277,5 +281,275 @@ exports.changePassword = async (req, res) => {
     return res.status(500).json({
       error: "Failed to change password",
     });
+  }
+};
+
+// ================= FORGOT PASSWORD =================
+exports.forgotPassword = async (req, res) => {
+  try {
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
+
+    // Always return the same response so callers cannot determine
+    // whether a particular email address exists in VAT Pro.
+    const genericResponse = {
+      message:
+        "If an account exists for that email address, a password reset link has been sent.",
+    };
+
+    if (!email) {
+      return res.status(400).json({
+        error: "Email is required",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT id, email
+      FROM users
+      WHERE LOWER(email) = $1
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json(genericResponse);
+    }
+
+    const user = result.rows[0];
+
+    // Invalidate any previous unused reset tokens for this user.
+    await pool.query(
+      `
+      UPDATE password_reset_tokens
+      SET used_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1
+        AND used_at IS NULL
+      `,
+      [user.id]
+    );
+
+    // The plaintext token goes only into the email.
+    // PostgreSQL stores only its SHA-256 hash.
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    await pool.query(
+      `
+      INSERT INTO password_reset_tokens
+      (
+        user_id,
+        token_hash,
+        expires_at
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        CURRENT_TIMESTAMP + INTERVAL '30 minutes'
+      )
+      `,
+      [user.id, tokenHash]
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    if (!frontendUrl) {
+      console.error("PASSWORD RESET ERROR: FRONTEND_URL is not configured");
+
+      return res.status(500).json({
+        error: "Password reset is temporarily unavailable",
+      });
+    }
+
+    const resetUrl =
+      `${frontendUrl.replace(/\/$/, "")}` +
+      `/reset-password?token=${encodeURIComponent(resetToken)}`;
+
+    const emailResult = await resend.emails.send({
+      from: "Maltech VAT Pro <noreply@maltechenterprises.com>",
+      to: user.email,
+      subject: "Reset Your Maltech VAT Pro Password",
+      html: `
+        <h2>Reset Your Password</h2>
+
+        <p>
+          We received a request to reset the password for your
+          Maltech VAT Pro account.
+        </p>
+
+        <p>
+          <a href="${resetUrl}">Reset your password</a>
+        </p>
+
+        <p>
+          This link will expire in 30 minutes and can only be used once.
+        </p>
+
+        <p>
+          If you did not request this reset, you can ignore this email.
+        </p>
+
+        <p>
+          Regards,<br />
+          Maltech VAT Pro
+        </p>
+      `,
+    });
+
+    if (emailResult.error) {
+      console.error(
+        "PASSWORD RESET EMAIL ERROR:",
+        emailResult.error
+      );
+
+      await pool.query(
+        `
+        UPDATE password_reset_tokens
+        SET used_at = CURRENT_TIMESTAMP
+        WHERE token_hash = $1
+          AND used_at IS NULL
+        `,
+        [tokenHash]
+      );
+
+      return res.json(genericResponse);
+    }
+
+    return res.json(genericResponse);
+
+  } catch (error) {
+    console.error(
+      "FORGOT PASSWORD ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "Password reset is temporarily unavailable",
+    });
+  }
+};
+
+// ================= RESET PASSWORD =================
+exports.resetPassword = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        error: "Reset token and new password are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        error: "New password must be at least 8 characters",
+      });
+    }
+
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(String(token))
+      .digest("hex");
+
+    await client.query("BEGIN");
+
+    const tokenResult = await client.query(
+      `
+      SELECT
+        prt.id,
+        prt.user_id
+      FROM password_reset_tokens prt
+      WHERE prt.token_hash = $1
+        AND prt.used_at IS NULL
+        AND prt.expires_at > CURRENT_TIMESTAMP
+      FOR UPDATE
+      `,
+      [tokenHash]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        error: "Reset link is invalid or has expired",
+      });
+    }
+
+    const resetRecord = tokenResult.rows[0];
+
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      10
+    );
+
+    const userResult = await client.query(
+      `
+      UPDATE users
+      SET password = $1
+      WHERE id = $2
+      RETURNING id
+      `,
+      [
+        hashedPassword,
+        resetRecord.user_id,
+      ]
+    );
+
+    if (userResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        error: "Unable to reset password",
+      });
+    }
+
+    // Consume this token and invalidate any other outstanding
+    // password-reset tokens belonging to the same user.
+    await client.query(
+      `
+      UPDATE password_reset_tokens
+      SET used_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1
+        AND used_at IS NULL
+      `,
+      [resetRecord.user_id]
+    );
+
+    await client.query("COMMIT");
+
+    return res.json({
+      message: "Password reset successfully",
+    });
+
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error(
+        "PASSWORD RESET ROLLBACK ERROR:",
+        rollbackError
+      );
+    }
+
+    console.error(
+      "RESET PASSWORD ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "Failed to reset password",
+    });
+
+  } finally {
+    client.release();
   }
 };
