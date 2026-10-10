@@ -583,6 +583,7 @@ exports.confirmImport = async (req, res) => {
       FROM import_batches
       WHERE id = $1
       LIMIT 1
+      FOR UPDATE
       `,
       [batchId]
     );
@@ -593,6 +594,41 @@ exports.confirmImport = async (req, res) => {
     }
 
     const batch = batchResult.rows[0];
+
+    // Verify that the authenticated user belongs to the batch's company.
+    const userId = req.user?.id;
+
+    if (!userId) {
+      await client.query("ROLLBACK");
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    const accessResult = await client.query(
+      `
+  SELECT role
+  FROM user_companies
+  WHERE user_id = $1
+    AND company_id = $2
+  LIMIT 1
+  `,
+      [userId, batch.company_id]
+    );
+
+    if (accessResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        error: "Access denied for this company",
+      });
+    }
+
+    if (!["admin", "staff"].includes(accessResult.rows[0].role)) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        error: "Insufficient permissions to confirm imports",
+      });
+    }
 
     if (batch.status === "imported") {
       await client.query("ROLLBACK");
@@ -631,7 +667,7 @@ exports.confirmImport = async (req, res) => {
 
     // 3. Insert transactions + mark rows imported
     for (const row of rowsResult.rows) {
-     
+
       const parsed =
         typeof row.parsed_data === "string"
           ? JSON.parse(row.parsed_data)
@@ -644,13 +680,10 @@ exports.confirmImport = async (req, res) => {
       const description = String(parsed?.description || "").trim();
 
       const vatCalculation = calculateVAT(amount, classification);
-      const vatAmount =
-        typeof vatCalculation === "object"
-          ? Number(vatCalculation.vatAmount || 0)
-          : Number(vatCalculation || 0);
+      const vatAmount = vatCalculation.vatAmount;
+      const vatRate = vatCalculation.vatRate;
 
-      // Duplicate warning check only.
-      // This does not block the import yet.
+      // Reject potential duplicates and roll back the batch.
       const duplicateCheck = await client.query(
         `
         SELECT id
@@ -672,12 +705,12 @@ exports.confirmImport = async (req, res) => {
       );
 
       if (duplicateCheck.rows.length > 0) {
-        console.warn("DUPLICATE DETECTED DURING IMPORT:", {
-          batchId,
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error: "Potential duplicate transaction detected. Import cancelled pending review.",
+          batchId: Number(batchId),
           rowId: row.id,
-          description,
-          amount,
-          transactionDate,
           existingTransactionId: duplicateCheck.rows[0].id,
         });
       }
@@ -690,13 +723,14 @@ exports.confirmImport = async (req, res) => {
             type,
             amount,
             vat_amount,
+	    vat_rate,
             vat_classification,
             transaction_date,
             description,
             import_batch_id,
             created_at
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
           RETURNING *
           `,
           [
@@ -704,6 +738,7 @@ exports.confirmImport = async (req, res) => {
             type,
             amount,
             vatAmount,
+            vatRate,
             classification,
             transactionDate,
             description,
