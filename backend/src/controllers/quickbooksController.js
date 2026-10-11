@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const oauthClient = require("../services/quickbooksService");
 const OAuthClient = require("intuit-oauth");
+const crypto = require("crypto");
 
 const getQuickBooksConnection = async (companyId) => {
     const result = await pool.query(
@@ -96,135 +97,211 @@ const getValidAccessToken = async (companyId) => {
 };
 
 exports.connectQuickBooks = async (req, res) => {
-    console.log("🔥 CONNECT QUICKBOOKS HIT");
-
-    console.log("REQ USER:", req.user);
-    console.log("REQ QUERY:", req.query);
-
     try {
         const companyId = req.query.companyId;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({
+                error: "Unauthorized"
+            });
+        }
 
         if (!companyId) {
-            console.log("MISSING COMPANY ID");
-            return res.status(400).json({ error: "Company ID is required" });
+            return res.status(400).json({
+                error: "Company ID is required"
+            });
         }
 
-        if (!req.user || !req.user.id) {
-            console.log("MISSING AUTH USER");
-            return res.status(401).json({ error: "Unauthorized - missing user" });
+        // Verify membership independently of route middleware.
+        const membership = await pool.query(
+            `SELECT 1
+             FROM user_companies
+             WHERE user_id = $1 AND company_id = $2
+             LIMIT 1`,
+            [userId, companyId]
+        );
+
+        if (membership.rows.length === 0) {
+            return res.status(403).json({
+                error: "Access denied for this company"
+            });
         }
 
-        const state = Buffer.from(
-            JSON.stringify({
-                companyId,
-                userId: req.user.id,
-            })
-        ).toString("base64");
+        // Generate an unpredictable OAuth state.
+        const state = crypto.randomBytes(32).toString("hex");
 
-        console.log("GENERATING QUICKBOOKS AUTH URL...");
+        // Store only the hash, never the original state.
+        const stateHash = crypto
+            .createHash("sha256")
+            .update(state)
+            .digest("hex");
+
+        await pool.query(
+            `INSERT INTO quickbooks_oauth_states
+                (state_hash, user_id, company_id, expires_at)
+             VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
+            [stateHash, userId, companyId]
+        );
 
         const authUri = oauthClient.authorizeUri({
             scope: [OAuthClient.scopes.Accounting],
-            state,
+            state
         });
 
-        console.log("AUTH URI GENERATED:", authUri);
-
-        return res.json({
-            authUri,
-        });
+        return res.json({ authUri });
 
     } catch (error) {
-        console.error("FULL QUICKBOOKS ERROR:", error);
-        console.error("STACK:", error.stack);
+        console.error(
+            "QuickBooks connection initialization failed:",
+            error.message
+        );
 
         return res.status(500).json({
-            error: "Failed to initiate QuickBooks connection",
+            error: "Failed to initiate QuickBooks connection"
         });
     }
 };
 
 exports.quickBooksCallback = async (req, res) => {
     try {
-        if (!req.query.state) {
-            throw new Error("Missing OAuth state");
+        const state = req.query.state;
+        const realmId = req.query.realmId;
+
+        if (
+            typeof state !== "string" ||
+            !/^[a-f0-9]{64}$/.test(state) ||
+            typeof realmId !== "string" ||
+            !realmId.trim()
+        ) {
+            return res.status(400).json({
+                error: "Invalid QuickBooks OAuth callback"
+            });
         }
 
+        // Hash the received state. Never store the raw state.
+        const stateHash = crypto
+            .createHash("sha256")
+            .update(state)
+            .digest("hex");
+
+        // Atomically consume the state.
+        // Expired or previously used states cannot be reused.
+        const stateResult = await pool.query(
+            `
+            UPDATE quickbooks_oauth_states
+            SET used_at = NOW()
+            WHERE state_hash = $1
+              AND used_at IS NULL
+              AND expires_at > NOW()
+            RETURNING user_id, company_id
+            `,
+            [stateHash]
+        );
+
+        if (stateResult.rows.length === 0) {
+            return res.status(400).json({
+                error: "Invalid, expired, or previously used OAuth state"
+            });
+        }
+
+        const { user_id: userId, company_id: companyId } =
+            stateResult.rows[0];
+
+        // Recheck authorization before exchanging credentials.
+        const membership = await pool.query(
+            `
+            SELECT 1
+	    FROM user_companies
+	    WHERE user_id = $1
+              AND company_id = $2
+              AND role IN ('admin', 'staff')
+            LIMIT 1
+            `,
+            [userId, companyId]
+        );
+
+        if (membership.rows.length === 0) {
+            return res.status(403).json({
+                error: "Company authorization no longer valid"
+            });
+        }
+
+        // Only a validated state may reach the token exchange.
         const authResponse = await oauthClient.createToken(req.url);
         const tokenData = authResponse.getJson();
 
-        const realmId = req.query.realmId; // FIXED LOCATION
-
         const accessToken = tokenData.access_token;
         const refreshToken = tokenData.refresh_token;
-        const expiresIn = tokenData.expires_in;
+        const expiresIn = Number(tokenData.expires_in);
 
-        const decodedState = JSON.parse(
-            Buffer.from(req.query.state, "base64").toString("utf8")
-        );
-
-        const companyId = decodedState.companyId;
-
-        if (!companyId || !realmId) {
-            throw new Error("Missing companyId or realmId");
+        if (
+            !accessToken ||
+            !refreshToken ||
+            !Number.isFinite(expiresIn) ||
+            expiresIn <= 0
+        ) {
+            throw new Error("Invalid QuickBooks token response");
         }
 
         await pool.query(
             `
-  INSERT INTO quickbooks_connections (
-    company_id,
-    realm_id,
-    access_token,
-    refresh_token,
-    token_expires_at,
-    created_at,
-    updated_at
-  )
-  VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    NOW() + ($5 || ' seconds')::interval,
-    NOW(),
-    NOW()
-  )
-  ON CONFLICT (company_id)
-  DO UPDATE SET
-    realm_id = EXCLUDED.realm_id,
-    access_token = EXCLUDED.access_token,
-    refresh_token = EXCLUDED.refresh_token,
-    token_expires_at = EXCLUDED.token_expires_at,
-    updated_at = NOW()
-  `,
-            [companyId, realmId, accessToken, refreshToken, expiresIn]
+            INSERT INTO quickbooks_connections (
+                company_id,
+                realm_id,
+                access_token,
+                refresh_token,
+                token_expires_at,
+                created_at,
+                updated_at
+            )
+            VALUES (
+                $1,
+                $2,
+                $3,
+                $4,
+                NOW() + ($5 * INTERVAL '1 second'),
+                NOW(),
+                NOW()
+            )
+            ON CONFLICT (company_id)
+            DO UPDATE SET
+                realm_id = EXCLUDED.realm_id,
+                access_token = EXCLUDED.access_token,
+                refresh_token = EXCLUDED.refresh_token,
+                token_expires_at = EXCLUDED.token_expires_at,
+                updated_at = NOW()
+            `,
+            [
+                companyId,
+                realmId,
+                accessToken,
+                refreshToken,
+                expiresIn
+            ]
         );
 
-        console.log("====================================");
-        console.log("✅ QUICKBOOKS CONNECTED SUCCESSFULLY");
-        console.log("Company ID:", companyId);
-        console.log("Realm ID:", realmId);
-        console.log("====================================");
+        console.log(
+            "QuickBooks connected for company:",
+            companyId
+        );
 
         const frontendUrl =
             process.env.FRONTEND_URL ||
             "https://vat-pro-frontend.onrender.com";
 
         return res.redirect(
-            `${frontendUrl}/dashboard?quickbooks=connected&companyId=${companyId}`
+            `${frontendUrl}/dashboard?quickbooks=connected&companyId=${encodeURIComponent(companyId)}`
         );
 
-
     } catch (error) {
-        console.error("====================================");
-        console.error("❌ QUICKBOOKS CALLBACK FAILED");
-        console.error(error);
-        console.error(error.stack);
-        console.error("====================================");
+        console.error(
+            "QuickBooks OAuth callback failed:",
+            error.message
+        );
 
-        return res.status(500).json({
-            error: "QuickBooks connection failed",
-            message: error.message,
+        return res.status(400).json({
+            error: "QuickBooks authorization failed"
         });
     }
 };
