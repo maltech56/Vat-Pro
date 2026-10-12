@@ -96,6 +96,73 @@ const getValidAccessToken = async (companyId) => {
     };
 };
 
+const fetchQuickBooksPages = async (
+    realmId,
+    accessToken,
+    entity,
+    pageSize = 100
+) => {
+    const allowedEntities = [
+        "Customer",
+        "Vendor",
+        "Invoice",
+        "Bill"
+    ];
+
+    if (!allowedEntities.includes(entity)) {
+        throw new Error("Invalid QuickBooks entity");
+    }
+
+    const records = [];
+    let startPosition = 1;
+
+    while (true) {
+        const query =
+            `SELECT * FROM ${entity} ` +
+            `STARTPOSITION ${startPosition} ` +
+            `MAXRESULTS ${pageSize}`;
+
+        const url =
+            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/query?query=${encodeURIComponent(query)}`;
+
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: "application/json"
+            }
+        });
+
+        const data = await response.json();
+
+        if (
+            !response.ok ||
+            data?.Fault ||
+            !data?.QueryResponse
+        ) {
+            throw new Error(
+                `QuickBooks ${entity} retrieval failed (HTTP ${response.status})`
+            );
+        }
+
+        const pageRecords =
+            data.QueryResponse[entity] || [];
+
+        if (!Array.isArray(pageRecords)) {
+            throw new Error("Invalid QuickBooks response");
+        }
+
+        records.push(...pageRecords);
+
+        if (pageRecords.length < pageSize) {
+            break;
+        }
+
+        startPosition += pageRecords.length;
+    }
+
+    return records;
+};
+
 exports.connectQuickBooks = async (req, res) => {
     try {
         const companyId = req.query.companyId;
@@ -380,27 +447,8 @@ exports.getQuickBooksCompanyInfo = async (req, res) => {
     try {
         const { companyId } = req.params;
 
-        const result = await pool.query(
-            `
-      SELECT
-        realm_id,
-        access_token
-      FROM quickbooks_connections
-      WHERE company_id = $1
-      `,
-            [companyId]
-        );
-
-        if (!result.rows.length) {
-            return res.status(404).json({
-                error: "QuickBooks not connected",
-            });
-        }
-
-        const {
-            realm_id,
-            access_token,
-        } = result.rows[0];
+        const { realm_id, access_token } =
+             await getValidAccessToken(companyId);
 
         const response = await fetch(
             `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/companyinfo/${realm_id}`,
@@ -439,19 +487,17 @@ exports.getQuickBooksCustomers = async (req, res) => {
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
 
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Customer`,
-            {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json",
-                },
-            }
+        const customers = await fetchQuickBooksPages(
+            realm_id,
+            access_token,
+            "Customer"
         );
 
-        const data = await response.json();
-
-        res.json(data);
+        return res.json({
+            QueryResponse: {
+                Customer: customers
+            }
+        });
 
     } catch (error) {
         console.error("QB Customers Error:", error);
@@ -470,19 +516,17 @@ exports.getQuickBooksVendors = async (req, res) => {
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
 
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Vendor`,
-            {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json",
-                },
+        const vendors = await fetchQuickBooksPages(
+            realm_id,
+            access_token,
+            "Vendor"
+	);
+
+	return res.json({
+            QueryResponse: {
+                Vendor: vendors
             }
-        );
-
-        const data = await response.json();
-
-        res.json(data);
+	});
 
     } catch (error) {
         console.error("QB Vendors Error:", error);
@@ -501,26 +545,24 @@ exports.getQuickBooksInvoices = async (req, res) => {
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
 
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
-            {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json",
-                },
-            }
+        const invoices = await fetchQuickBooksPages(
+            realm_id,
+            access_token,
+            "Invoice"
         );
 
-        const data = await response.json();
-
-        res.json(data);
+        return res.json({
+            QueryResponse: {
+                Invoice: invoices
+            }
+        });
 
     } catch (error) {
         console.error("QB Invoices Error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             error: "Failed to load invoices",
-            message: error.message,
+            message: error.message
         });
     }
 };
@@ -532,26 +574,24 @@ exports.getQuickBooksBills = async (req, res) => {
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
 
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
-            {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json",
-                },
-            }
+        const bills = await fetchQuickBooksPages(
+            realm_id,
+            access_token,
+            "Bill"
         );
 
-        const data = await response.json();
-
-        res.json(data);
+        return res.json({
+            QueryResponse: {
+                Bill: bills
+            }
+        });
 
     } catch (error) {
         console.error("QB Bills Error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             error: "Failed to load bills",
-            message: error.message,
+            message: error.message
         });
     }
 };
@@ -563,50 +603,44 @@ exports.importQuickBooksCustomers = async (req, res) => {
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
 
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Customer`,
-            {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json",
-                },
-            }
+        const customers = await fetchQuickBooksPages(
+            realm_id,
+            access_token,
+            "Customer"
         );
-
-        const data = await response.json();
-
-        const customers =
-            data?.QueryResponse?.Customer || [];
 
         let imported = 0;
 
         for (const customer of customers) {
-            await pool.query(
-                `
-                INSERT INTO qb_customers
+           const result = await pool.query(
+               `
+               INSERT INTO qb_customers
                 (
-                    company_id,
-                    qb_customer_id,
-                    display_name,
-                    company_name
-                )
-                VALUES ($1,$2,$3,$4)
+               company_id,
+                   realm_id,
+               qb_customer_id,
+               display_name,
+               company_name
+               )
+               VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT
-                (
-                    company_id,
-                    qb_customer_id
-                )
-                DO NOTHING
-                `,
-                [
-                    companyId,
-                    customer.Id,
-                    customer.DisplayName,
-                    customer.CompanyName || null,
-                ]
-            );
+               (
+               company_id,
+               realm_id,
+               qb_customer_id
+               )
+               DO NOTHING
+               `,
+               [
+               companyId,
+               realm_id,
+               customer.Id,
+               customer.DisplayName,
+               customer.CompanyName || null
+              ]
+	);
 
-            imported++;
+            imported += result.rowCount;
         }
 
         return res.json({
@@ -635,57 +669,49 @@ exports.importQuickBooksVendors = async (req, res) => {
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
 
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Vendor`,
-            {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json",
-                },
-            }
+        const vendors = await fetchQuickBooksPages(
+            realm_id,
+            access_token,
+            "Vendor"
         );
-
-        const data = await response.json();
-
-        const vendors =
-            data?.QueryResponse?.Vendor || [];
 
         let imported = 0;
 
         for (const vendor of vendors) {
 
-            await pool.query(
-                `
-        INSERT INTO qb_vendors
-        (
-          company_id,
-          qb_vendor_id,
-          display_name,
-          company_name,
-          email,
-          phone
-        )
-        VALUES
-        ($1,$2,$3,$4,$5,$6)
+            const result = await pool.query(
+    `
+    INSERT INTO qb_vendors
+    (
+        company_id,
+        realm_id,
+        qb_vendor_id,
+        display_name,
+        company_name,
+        email,
+        phone
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ON CONFLICT
+    (
+        company_id,
+        realm_id,
+        qb_vendor_id
+    )
+    DO NOTHING
+    `,
+    [
+        companyId,
+        realm_id,
+        vendor.Id,
+        vendor.DisplayName,
+        vendor.CompanyName || null,
+        vendor.PrimaryEmailAddr?.Address || null,
+        vendor.PrimaryPhone?.FreeFormNumber || null
+    ]
+);
 
-        ON CONFLICT
-        (
-          company_id,
-          qb_vendor_id
-        )
-        DO NOTHING
-        `,
-                [
-                    companyId,
-                    vendor.Id,
-                    vendor.DisplayName,
-                    vendor.CompanyName || null,
-                    vendor.PrimaryEmailAddr?.Address || null,
-                    vendor.PrimaryPhone?.FreeFormNumber || null,
-                ]
-            );
-
-            imported++;
+            imported += result.rowCount;
         }
 
         return res.json({
