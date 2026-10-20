@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const oauthClient = require("../services/quickbooksService");
+const { quickBooksApiBase } = oauthClient;
 const OAuthClient = require("intuit-oauth");
 const crypto = require("crypto");
 
@@ -123,7 +124,7 @@ const fetchQuickBooksPages = async (
             `MAXRESULTS ${pageSize}`;
 
         const url =
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/query?query=${encodeURIComponent(query)}`;
+            `${quickBooksApiBase}/v3/company/${realmId}/query?query=${encodeURIComponent(query)}`;
 
         const response = await fetch(url, {
             headers: {
@@ -373,31 +374,70 @@ exports.quickBooksCallback = async (req, res) => {
     }
 };
 
-exports.disconnectQuickBooks = async (req, res) => {
-    try {
-        const { companyId } = req.body;
+// Treat only an explicit invalid-token response as proof that the stored grant
+// can no longer be revoked. Other failures (including 401, timeouts and 5xx)
+// are not evidence of an invalid refresh token.
+const isConfirmedInvalidRevocationToken = (error) => {
+    const status = Number(error?.statusCode ?? error?.response?.status ?? error?.response?.statusCode);
+    const payload = error?.response?.data ?? error?.response?.body ?? error?.response?.json ?? error?.error;
+    const code = payload?.error ?? payload?.code;
+    return status === 400 && code === "invalid_token";
+};
 
-        await pool.query(
-            `
-      DELETE FROM quickbooks_connections
-      WHERE company_id = $1
-      `,
+exports.disconnectQuickBooks = async (req, res) => {
+    const companyId = req.body?.companyId;
+    if (!Number.isSafeInteger(Number(companyId)) || Number(companyId) <= 0) {
+        return res.status(400).json({ error: "Valid company ID is required" });
+    }
+    try {
+        // companyAccess middleware must authorize company membership and role.
+        const result = await pool.query(
+            `SELECT refresh_token FROM quickbooks_connections WHERE company_id = $1`,
             [companyId]
         );
+        if (!result.rows.length) {
+            return res.json({ disconnected: true, message: "QuickBooks already disconnected" });
+        }
+        const refreshToken = result.rows[0].refresh_token;
+        if (!refreshToken) {
+            return res.status(409).json({ error: "Missing authorization token. Contact support to complete disconnection." });
+        }
 
+        let alreadyInvalid = false;
+        try {
+            await oauthClient.revoke({ refresh_token: refreshToken });
+        } catch (revokeError) {
+            if (isConfirmedInvalidRevocationToken(revokeError)) {
+                // Explicitly invalid at Intuit: clear only this stale local grant.
+                alreadyInvalid = true;
+            } else {
+                console.error("QuickBooks token revocation could not be confirmed for company", companyId);
+                return res.status(502).json({
+                    error: "Intuit could not confirm disconnection. Try again or contact support."
+                });
+            }
+        }
+
+        const deletion = await pool.query(
+            `DELETE FROM quickbooks_connections WHERE company_id = $1 AND refresh_token = $2`,
+            [companyId, refreshToken]
+        );
+        if (deletion.rowCount !== 1) {
+            return res.status(409).json({
+                disconnected: false,
+                error: "QuickBooks connection changed during disconnection. Refresh its status and retry."
+            });
+        }
         return res.json({
-            message:
-                "QuickBooks disconnected successfully",
+            disconnected: true,
+            authorizationAlreadyInvalid: alreadyInvalid,
+            message: alreadyInvalid
+                ? "Stored QuickBooks connection cleared; Intuit reported the token was already invalid."
+                : "QuickBooks disconnected successfully"
         });
     } catch (error) {
-        console.error(
-            "QuickBooks disconnect error:",
-            error
-        );
-
-        return res.status(500).json({
-            error: "Failed to disconnect QuickBooks",
-        });
+        console.error("QuickBooks disconnect error for company", companyId, error.message);
+        return res.status(500).json({ error: "Failed to disconnect QuickBooks" });
     }
 };
 
@@ -451,7 +491,7 @@ exports.getQuickBooksCompanyInfo = async (req, res) => {
              await getValidAccessToken(companyId);
 
         const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/companyinfo/${realm_id}`,
+            `${quickBooksApiBase}/v3/company/${realm_id}/companyinfo/${realm_id}`,
             {
                 headers: {
                     Authorization: `Bearer ${access_token}`,
@@ -733,206 +773,253 @@ exports.importQuickBooksVendors = async (req, res) => {
     }
 };
 
-exports.importQuickBooksInvoices = async (req, res) => {
-    try {
 
-        const { companyId } = req.params;
+// ======================================================
+// QUICKBOOKS FINANCIAL STAGING - INVOICES AND BILLS
+// ======================================================
+// Retrieves QuickBooks financial records and stages them
+// for Bahamas VAT review. Does not post transactions.
+
+const stageQuickBooksFinancialRecords = async (req, res, entity) => {
+    let client;
+
+    try {
+        const companyId = Number(req.params.companyId);
+        const userId = req.user?.id;
+
+        if (!Number.isSafeInteger(companyId) || companyId <= 0) {
+            return res.status(400).json({
+                error: "Invalid company ID"
+            });
+        }
+
+        if (!userId) {
+            return res.status(401).json({
+                error: "Unauthorized"
+            });
+        }
 
         const { realm_id, access_token } =
             await getValidAccessToken(companyId);
 
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Invoice`,
-            {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json",
-                },
-            }
+        // Fetch all pages before starting the database transaction.
+        const records = await fetchQuickBooksPages(
+            realm_id,
+            access_token,
+            entity
         );
 
-        const data = await response.json();
+        client = await pool.connect();
+        await client.query("BEGIN");
 
-        const invoices =
-            data?.QueryResponse?.Invoice || [];
+        // Confirm permissions independently of route middleware.
+        const accessResult = await client.query(
+            `
+            SELECT role
+            FROM user_companies
+            WHERE user_id = $1 AND company_id = $2
+            LIMIT 1
+            `,
+            [userId, companyId]
+        );
 
-        let imported = 0;
+        if (
+            !accessResult.rows.length ||
+            !["admin", "staff"].includes(accessResult.rows[0].role)
+        ) {
+            await client.query("ROLLBACK");
+            return res.status(403).json({
+                error: "Insufficient company permissions"
+            });
+        }
 
-        for (const invoice of invoices) {
+        const batchResult = await client.query(
+            `
+            INSERT INTO import_batches (
+                company_id,
+                uploaded_by,
+                file_name,
+                file_type,
+                source_type,
+                status,
+                total_rows,
+                valid_rows,
+                error_rows,
+                notes
+            )
+            VALUES (
+                $1, $2, $3, 'quickbooks',
+                'quickbooks', 'review_required',
+                0, 0, 0, $4
+            )
+            RETURNING id
+            `,
+            [
+                companyId,
+                userId,
+                `quickbooks-${entity.toLowerCase()}-import`,
+                `QuickBooks ${entity} staging - VAT review required`
+            ]
+        );
 
-            const total =
-                Number(invoice.TotalAmt || 0);
+        const batchId = batchResult.rows[0].id;
+        let staged = 0;
+        let skipped = 0;
 
-            const vat =
-                Number(
-                    invoice.TxnTaxDetail?.TotalTax || 0
+        for (const record of records) {
+            const quickbooksId = String(record.Id || "").trim();
+
+            if (!quickbooksId) {
+                throw new Error(
+                    `QuickBooks ${entity} record has no ID`
                 );
+            }
 
-            const subtotal =
-                total - vat;
-
-            await pool.query(
+            // Reserve this external record atomically.
+            // Already staged or imported records are skipped.
+            const trackingResult = await client.query(
                 `
-        INSERT INTO vat_transactions
-        (
-          company_id,
-          source,
-          source_id,
-          transaction_type,
-          document_number,
-          transaction_date,
-          customer_vendor_name,
-          subtotal,
-          vat_amount,
-          total_amount
-        )
-        VALUES
-        (
-          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
-        )
-
-        ON CONFLICT
-        (
-          company_id,
-          source,
-          source_id
-        )
-        DO NOTHING
-        `,
+                INSERT INTO quickbooks_transaction_tracking (
+                    company_id,
+                    realm_id,
+                    entity_type,
+                    quickbooks_id,
+                    status
+                )
+                VALUES ($1, $2, $3, $4, 'staged')
+                ON CONFLICT (
+                    company_id,
+                    realm_id,
+                    entity_type,
+                    quickbooks_id
+                )
+                DO NOTHING
+                RETURNING id
+                `,
                 [
                     companyId,
-                    "QUICKBOOKS",
-                    invoice.Id,
-                    "SALE",
-                    invoice.DocNumber,
-                    invoice.TxnDate,
-                    invoice.CustomerRef?.name || null,
-                    subtotal,
-                    vat,
-                    total,
+                    realm_id,
+                    entity,
+                    quickbooksId
                 ]
             );
 
-            imported++;
+            if (!trackingResult.rows.length) {
+                skipped++;
+                continue;
+            }
+
+            const rowResult = await client.query(
+                `
+                INSERT INTO import_rows (
+                    batch_id,
+                    row_number,
+                    raw_data,
+                    parsed_data,
+                    status,
+                    error_message
+                )
+                VALUES ($1, $2, $3, $4, 'pending_review', NULL)
+                RETURNING id
+                `,
+                [
+                    batchId,
+                    staged + 1,
+                    JSON.stringify(record),
+                    JSON.stringify({
+                        source: "quickbooks",
+                        entityType: entity,
+                        quickbooksId,
+                        realmId: realm_id,
+                        type: entity === "Invoice" ? "sale" : "expense",
+                        documentNumber: record.DocNumber || null,
+                        transactionDate: record.TxnDate || null,
+                        partyName: entity === "Invoice"
+                            ? record.CustomerRef?.name || null
+                            : record.VendorRef?.name || null,
+                        quickbooksTotal: record.TotalAmt ?? null,
+                        quickbooksTax: record.TxnTaxDetail?.TotalTax ?? null,
+                        amount: null,
+                        classification: null,
+                        vatReviewApproved: false
+                    })
+                ]
+            );
+
+            await client.query(
+                `
+                UPDATE quickbooks_transaction_tracking
+                SET import_row_id = $1,
+                    updated_at = NOW()
+                WHERE id = $2
+                `,
+                [
+                    rowResult.rows[0].id,
+                    trackingResult.rows[0].id
+                ]
+            );
+
+            staged++;
         }
+
+        await client.query(
+            `
+            UPDATE import_batches
+            SET total_rows = $1,
+                valid_rows = 0,
+                error_rows = 0,
+                updated_at = NOW()
+            WHERE id = $2
+            `,
+            [staged, batchId]
+        );
+
+        await client.query("COMMIT");
 
         return res.json({
             success: true,
-            imported,
+            message: "QuickBooks records staged for Bahamas VAT review",
+            batchId,
+            entity,
+            fetched: records.length,
+            staged,
+            skipped,
+            status: "review_required",
+            transactionsPosted: 0
         });
 
     } catch (error) {
+        if (client) {
+            try {
+                await client.query("ROLLBACK");
+            } catch (rollbackError) {
+                console.error(
+                    "QuickBooks staging rollback failed:",
+                    rollbackError
+                );
+            }
+        }
 
         console.error(
-            "QB INVOICE IMPORT ERROR:",
+            `QuickBooks ${entity} staging error:`,
             error
         );
 
         return res.status(500).json({
-            error: "Failed to import invoices",
-            message: error.message,
+            error: `Failed to stage QuickBooks ${entity} records`
         });
+
+    } finally {
+        if (client) {
+            client.release();
+        }
     }
 };
 
+exports.importQuickBooksInvoices = async (req, res) => {
+    return stageQuickBooksFinancialRecords(req, res, "Invoice");
+};
+
 exports.importQuickBooksBills = async (req, res) => {
-    try {
-
-        const { companyId } = req.params;
-
-        const { realm_id, access_token } =
-            await getValidAccessToken(companyId);
-
-        const response = await fetch(
-            `https://sandbox-quickbooks.api.intuit.com/v3/company/${realm_id}/query?query=select * from Bill`,
-            {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    Accept: "application/json",
-                },
-            }
-        );
-
-        const data = await response.json();
-
-        const bills =
-            data?.QueryResponse?.Bill || [];
-
-        let imported = 0;
-
-        for (const bill of bills) {
-
-            const total =
-                Number(bill.TotalAmt || 0);
-
-            const vat =
-                Number(
-                    bill.TxnTaxDetail?.TotalTax || 0
-                );
-
-            const subtotal =
-                total - vat;
-
-            await pool.query(
-                `
-        INSERT INTO vat_transactions
-        (
-          company_id,
-          source,
-          source_id,
-          transaction_type,
-          document_number,
-          transaction_date,
-          customer_vendor_name,
-          subtotal,
-          vat_amount,
-          total_amount
-        )
-        VALUES
-        (
-          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
-        )
-
-        ON CONFLICT
-        (
-          company_id,
-          source,
-          source_id
-        )
-        DO NOTHING
-        `,
-                [
-                    companyId,
-                    "QUICKBOOKS",
-                    bill.Id,
-                    "PURCHASE",
-                    bill.DocNumber,
-                    bill.TxnDate,
-                    bill.VendorRef?.name || null,
-                    subtotal,
-                    vat,
-                    total,
-                ]
-            );
-
-            imported++;
-        }
-
-        return res.json({
-            success: true,
-            imported,
-        });
-
-    } catch (error) {
-
-        console.error(
-            "QB BILL IMPORT ERROR:",
-            error
-        );
-
-        return res.status(500).json({
-            error: "Failed to import bills",
-            message: error.message,
-        });
-    }
+    return stageQuickBooksFinancialRecords(req, res, "Bill");
 };

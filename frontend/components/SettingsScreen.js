@@ -76,6 +76,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
     useState(false);
 
   const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   const [syncResults, setSyncResults] = useState({
     customers: 0,
@@ -471,6 +472,41 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
     }
   };
 
+  const handleDisconnectQuickBooks = async () => {
+    if (!selectedCompany?.id || disconnecting || syncing) return;
+    const disconnect = async () => {
+      try {
+        setDisconnecting(true);
+        await apiFetch("/quickbooks/disconnect", {
+          method: "POST",
+          body: JSON.stringify({ companyId: selectedCompany.id }),
+        });
+        await loadQuickBooksStatus();
+        if (typeof window !== "undefined") {
+          window.alert("QuickBooks disconnected successfully.");
+        } else {
+          Alert.alert("QuickBooks", "QuickBooks disconnected successfully.");
+        }
+      } catch (error) {
+        const message = error.message || "Unable to disconnect QuickBooks.";
+        if (typeof window !== "undefined") window.alert(message);
+        else Alert.alert("QuickBooks", message);
+      } finally {
+        setDisconnecting(false);
+      }
+    };
+    if (typeof window !== "undefined") {
+      if (window.confirm("Disconnect QuickBooks for this company? Future imports will stop until reconnected.")) {
+        await disconnect();
+      }
+    } else {
+      Alert.alert("Disconnect QuickBooks", "Disconnect QuickBooks for this company?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Disconnect", style: "destructive", onPress: disconnect },
+      ]);
+    }
+  };
+
   const syncCustomers = async () => {
     try {
       setSyncing(true);
@@ -859,6 +895,18 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
                 Sync All
               </Text>
             </TouchableOpacity>
+
+            {quickBooksConnected && (userForm.role === "admin" || userForm.role === "staff") && (
+              <TouchableOpacity
+                style={[styles.saveButton, { backgroundColor: "#991b1b", marginTop: 12 }]}
+                onPress={handleDisconnectQuickBooks}
+                disabled={syncing || disconnecting}
+              >
+                <Text style={styles.saveButtonText}>
+                  {disconnecting ? "Disconnecting..." : "Disconnect QuickBooks"}
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <View style={{ marginTop: 15 }}>
               <Text>
