@@ -136,10 +136,17 @@ exports.uploadDocument = async (req, res) => {
       ]
     );
 
+    const {
+      file_path,
+      file_name,
+      ...safeDocument
+    } = result.rows[0];
+
     res.status(201).json({
       message: "Document uploaded successfully",
-      document: result.rows[0],
+      document: safeDocument,
     });
+
   } catch (error) {
     console.error("uploadDocument error:", error);
     res.status(500).json({
@@ -329,10 +336,11 @@ exports.getDocumentsByTransaction = async (req, res) => {
       `
       SELECT *
       FROM company_documents d
-      WHERE transaction_id = $1
-      ORDER BY created_at DESC
+      WHERE d.transaction_id = $1
+        AND d.company_id = $2
+      ORDER BY d.created_at DESC
       `,
-      [transactionId]
+      [transactionId, transaction.company_id]
     );
 
     return res.json(result.rows);
@@ -456,9 +464,10 @@ exports.bulkLinkDocuments = async (req, res) => {
       UPDATE company_documents
       SET transaction_id = $1
       WHERE id = ANY($2::int[])
+        AND company_id = $3
       RETURNING *
       `,
-      [numericTransactionId, cleanedDocumentIds]
+      [numericTransactionId, cleanedDocumentIds, companyId]
     );
 
     return res.json({
@@ -635,5 +644,67 @@ exports.getAuditReadiness = async (req, res) => {
     return res.status(500).json({
       error: "Failed to calculate audit readiness",
     });
+  }
+};
+
+exports.downloadDocument = async (req, res) => {
+  try {
+    const document = req.document;
+
+    const filename = document?.file_name;
+
+    if (
+      !filename ||
+      filename !== path.basename(filename) ||
+      filename === "." ||
+      filename === ".." ||
+      filename.includes("\\")
+    ) {
+      return res.status(400).json({
+        error: "Invalid document filename",
+      });
+    }
+
+    const uploadDirectory = path.resolve(
+      __dirname,
+      "../../uploads/documents"
+    );
+
+    const absolutePath = path.join(uploadDirectory, filename);
+
+    const stats = await fs.promises.stat(absolutePath).catch(() => null);
+
+    if (!stats || !stats.isFile()) {
+      return res.status(404).json({
+        error: "Document file not found",
+      });
+    }
+
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+
+    return res.download(
+      absolutePath,
+      document.original_name || filename,
+      (error) => {
+        if (error) {
+          console.error("Secure document download error:", error);
+
+          if (!res.headersSent) {
+            res.status(500).json({
+              error: "Failed to download document",
+            });
+          }
+        }
+      }
+    );
+  } catch (error) {
+    console.error("downloadDocument error:", error);
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        error: "Failed to download document",
+      });
+    }
   }
 };

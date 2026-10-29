@@ -6,6 +6,7 @@ const companyAccess = require("../middleware/companyAccess");
 const documentAccessById = require("../middleware/documentAccessById");
 const upload = require("../middleware/documentUploadMiddleware");
 const documentController = require("../controllers/documentController");
+const validateDocumentContent = require("../middleware/validateDocumentContent");
 
 router.get(
   "/company/:companyId/audit-readiness",
@@ -41,13 +42,20 @@ router.get(
   documentController.getDocumentsByTransaction
 );
 
+
 router.post(
-  "/upload",
+  "/company/:companyId/upload",
   authMiddleware,
-  upload.single("file"),
   companyAccess("admin", "staff"),
+  upload.single("file"),
+  validateDocumentContent,
+  (req, res, next) => {
+    req.body.companyId = req.params.companyId;
+    next();
+  },
   documentController.uploadDocument
 );
+
 
 router.patch(
   "/:id/link-transaction",
@@ -69,6 +77,14 @@ router.patch(
   "/bulk-link",
   authMiddleware,
   documentController.bulkLinkDocuments
+);
+
+router.get(
+  "/:id/download",
+  authMiddleware,
+  documentAccessById,
+  companyAccess("admin", "staff", "viewer", "auditor"),
+  documentController.downloadDocument
 );
 
 router.delete(

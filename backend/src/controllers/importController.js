@@ -60,7 +60,7 @@ function getParsedRows(parsed) {
   if (Array.isArray(parsed.data)) return parsed.data;
   if (Array.isArray(parsed.preview)) return parsed.preview;
 
-  // 🔥 fallback: try first array value
+  // ðŸ”¥ fallback: try first array value
   for (const key in parsed) {
     if (Array.isArray(parsed[key])) {
       return parsed[key];
@@ -161,10 +161,11 @@ function validateParsedRow(parsedRow) {
 // ============================
 
 exports.importPdfForReview = async (req, res) => {
-  const client = await pool.connect();
+  let client;
   let batchId;
 
   try {
+    client = await pool.connect();
     const userId = req.user?.id;
     const { companyId } = req.body;
 
@@ -327,7 +328,7 @@ exports.importPdfForReview = async (req, res) => {
     });
   } catch (error) {
     try {
-      await client.query("ROLLBACK");
+      if (client) await client.query("ROLLBACK");
     } catch (rollbackError) {
       console.error("PDF OCR rollback failed:", rollbackError);
     }
@@ -364,10 +365,11 @@ exports.importPdfForReview = async (req, res) => {
 // ============================
 
 exports.uploadAndPreviewImport = async (req, res) => {
-  const client = await pool.connect();
+  let client;
   let batchId;
 
   try {
+    client = await pool.connect();
     const userId = req.user?.id;
     const { companyId } = req.body;
 
@@ -522,7 +524,6 @@ exports.uploadAndPreviewImport = async (req, res) => {
       message: "Import preview generated successfully",
       batchId,
       fileName,
-      filePath,
       companyId: Number(companyId),
       totalRows,
       validRows,
@@ -531,12 +532,12 @@ exports.uploadAndPreviewImport = async (req, res) => {
     });
   } catch (error) {
     try {
-      await client.query("ROLLBACK");
+      if (client) await client.query("ROLLBACK");
     } catch (rollbackError) {
       console.error("Rollback failed:", rollbackError);
     }
 
-    if (batchId) {
+    if (batchId && client) {
       try {
         await client.query(
           `
@@ -560,7 +561,20 @@ exports.uploadAndPreviewImport = async (req, res) => {
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   } finally {
-    client.release();
+    if (req.file?.path) {
+      try {
+        await fs.promises.unlink(req.file.path);
+      } catch (cleanupError) {
+        if (cleanupError.code !== "ENOENT") {
+          console.error(
+            "Import temporary file cleanup failed:",
+            cleanupError
+          );
+        }
+      }
+    }
+
+    if (client) client.release();
   }
 };
 
@@ -589,14 +603,26 @@ exports.confirmImport = async (req, res) => {
     );
 
     if (batchResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Import batch not found" });
-    }
+  await client.query("ROLLBACK");
+  return res.status(404).json({ error: "Import batch not found" });
+}
 
-    const batch = batchResult.rows[0];
+const batch = batchResult.rows[0];
 
-    // Verify that the authenticated user belongs to the batch's company.
-    const userId = req.user?.id;
+// ==================================================
+// BLOCK QUICKBOOKS IMPORTS FROM STANDARD CONFIRMATION
+// ==================================================
+if (batch.source_type === "quickbooks") {
+  await client.query("ROLLBACK");
+
+  return res.status(403).json({
+    error:
+      "QuickBooks financial imports require VAT review and cannot be confirmed through the standard import endpoint.",
+  });
+}
+
+// Verify that the authenticated user belongs to the batch's company.
+const userId = req.user?.id;
 
     if (!userId) {
       await client.query("ROLLBACK");

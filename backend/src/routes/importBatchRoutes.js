@@ -3,8 +3,10 @@ const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
 const companyAccess = require("../middleware/companyAccess");
+const importBatchAccess = require("../middleware/importBatchAccess");
 const importBatchController = require("../controllers/importBatchController");
 
+// List company import batches
 router.get(
   "/company/:companyId",
   authMiddleware,
@@ -12,12 +14,16 @@ router.get(
   importBatchController.getCompanyImportBatches
 );
 
+// View an import batch
 router.get(
   "/:id",
   authMiddleware,
+  importBatchAccess,
+  companyAccess("admin", "staff", "auditor"),
   importBatchController.getImportBatchById
 );
 
+// Create an import batch
 router.post(
   "/",
   authMiddleware,
@@ -25,9 +31,12 @@ router.post(
   importBatchController.createImportBatch
 );
 
+// Undo an imported batch
 router.post(
   "/:id/undo",
   authMiddleware,
+  importBatchAccess,
+  companyAccess("admin", "staff"),
   importBatchController.undoImportBatch
 );
 
