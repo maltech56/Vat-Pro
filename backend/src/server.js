@@ -28,7 +28,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+
 
 app.use(helmet());
 
@@ -82,8 +82,6 @@ app.get("/", (req, res) => {
   res.send("VAT Pro Backend Running 🚀");
 });
 
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== "production") {
     console.log("REQUEST:", req.method, req.originalUrl);
@@ -114,7 +112,44 @@ app.use(
   vatRoutes
 );
 
-console.log("✅ QUICKBOOKS ROUTES MOUNTED");
+console.log("QUICKBOOKS ROUTES MOUNTED");
+
+// Handle file upload validation errors
+app.use((err, req, res, next) => {
+  const multer = require("multer");
+
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      error: "File upload validation failed.",
+      code: err.code,
+    });
+  }
+
+  const uploadValidationMessages = [
+    "Unsupported document type.",
+    "Document file type does not match",
+    "Only CSV and Excel files are allowed",
+    "Invalid file MIME type",
+    "Only PDF files are allowed.",
+  ];
+
+  if (
+    err?.message &&
+    uploadValidationMessages.some((message) =>
+      err.message.startsWith(message)
+    )
+  ) {
+    return res.status(400).json({
+      error: err.message,
+    });
+  }
+
+  console.error("Unhandled server error:", err);
+
+  return res.status(500).json({
+    error: "Internal server error.",
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 

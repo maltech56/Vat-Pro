@@ -9,7 +9,7 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const isPdf =
-      file.mimetype === "application/pdf" ||
+      file.mimetype === "application/pdf" &&
       (file.originalname || "").toLowerCase().endsWith(".pdf");
 
     if (!isPdf) {

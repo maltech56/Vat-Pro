@@ -5,9 +5,9 @@ module.exports = (...allowedRoles) => {
     const userId = req.user?.id;
     const companyId =
       req.companyId ||
-      req.params.companyId ||
-      req.body.companyId ||
-      req.query.companyId;
+      req.params?.companyId ||
+      req.body?.companyId ||
+      req.query?.companyId;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }

@@ -1,4 +1,4 @@
-const pdfParse = require("pdf-parse");
+const { PDFParse } = require("pdf-parse");
 
 const OCR_CONFIDENCE_THRESHOLD = 80;
 
@@ -82,8 +82,16 @@ function parseRowsFromText(text) {
 }
 
 exports.extractPdfImportRows = async (buffer) => {
-  const parsed = await pdfParse(buffer);
-  const extractedText = parsed.text || "";
+  const parser = new PDFParse({ data: buffer });
+
+  let extractedText = "";
+
+  try {
+    const parsed = await parser.getText();
+    extractedText = parsed.text || "";
+  } finally {
+    await parser.destroy();
+  }
 
   const reviewRows = parseRowsFromText(extractedText);
 

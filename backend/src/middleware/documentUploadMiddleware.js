@@ -22,7 +22,35 @@ const storage = multer.diskStorage({
   },
 });
 
+const allowedFileTypes = {
+  ".pdf": ["application/pdf"],
+  ".jpg": ["image/jpeg"],
+  ".jpeg": ["image/jpeg"],
+  ".png": ["image/png"],
+  ".webp": ["image/webp"],
+  ".csv": ["text/csv", "application/csv", "application/vnd.ms-excel"],
+  ".xlsx": [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ],
+};
+
 const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname || "").toLowerCase();
+
+  const permittedMimeTypes = allowedFileTypes[ext];
+
+  if (!permittedMimeTypes) {
+    return cb(
+      new Error("Unsupported document type. PDF, images, CSV and Excel files are allowed.")
+    );
+  }
+
+  if (!permittedMimeTypes.includes(file.mimetype)) {
+    return cb(
+      new Error("Document file type does not match its declared MIME type.")
+    );
+  }
+
   cb(null, true);
 };
 

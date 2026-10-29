@@ -1,5 +1,6 @@
-// ✅ CORRECT
+// âœ… CORRECT
 const pool = require("../config/db");
+const { calculateVAT } = require("../utils/vatCalculator");
 
 const seedDemoData = async (req, res) => {
   const client = await pool.connect();
@@ -70,13 +71,38 @@ const seedDemoData = async (req, res) => {
     ];
 
     for (const tx of transactions) {
+      const classification = tx[1];
+      const amount = tx[3];
+
+      const vatCalculation = calculateVAT(amount, classification);
+
       await client.query(
-        `
-        INSERT INTO transactions
-        (company_id, type, category, description, amount, vat_amount, vat_rate, transaction_date, vat_classification)
-        VALUES ($1, $2, $2, $3, $4, $5, 0.10, $6, $7)
+      `
+      INSERT INTO transactions
+      (
+          company_id,
+          type,
+          category,
+          description,
+          amount,
+          vat_amount,
+          vat_rate,
+          transaction_date,
+          vat_classification
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `,
-        [company.id, tx[0], tx[2], tx[3], tx[4], tx[5], tx[1]]
+        [
+          company.id,
+          tx[0],
+          tx[0],
+          tx[2],
+          amount,
+          vatCalculation.vatAmount,
+          vatCalculation.vatRate,
+          tx[5],
+          classification
+        ]
       );
     }
 
