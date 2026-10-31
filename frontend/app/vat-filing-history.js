@@ -1275,22 +1275,25 @@ export default function VatFilingHistory({ onNavigate }) {
                         ) : canLockFiling(f) ? (
                           <TouchableOpacity
                             style={styles.actionOrange}
-                            onPress={() =>
-                              Alert.alert(
-                                "Lock Filing",
-                                "Once a filing is locked it cannot be edited. Do you want to continue?",
-                                [
-                                  {
-                                    text: "Cancel",
-                                    style: "cancel",
-                                  },
-                                  {
-                                    text: "Lock",
-                                    onPress: () => handleLockFiling(f.id),
-                                  },
-                                ]
-                              )
-                            }
+                            onPress={() => {
+                              const message =
+                                "Once a filing is locked it cannot be edited. Do you want to continue?";
+
+                              if (Platform.OS === "web") {
+                                if (window.confirm(message)) {
+                                  handleLockFiling(f.id);
+                                }
+                                return;
+                              }
+
+                              Alert.alert("Lock Filing", message, [
+                                { text: "Cancel", style: "cancel" },
+                                {
+                                  text: "Lock",
+                                  onPress: () => handleLockFiling(f.id),
+                                },
+                              ]);
+                            }}
                           >
                             <Text style={styles.actionText}>Lock</Text>
                           </TouchableOpacity>
