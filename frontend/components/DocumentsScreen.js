@@ -576,13 +576,16 @@ export default function DocumentsScreen({ pageOptions = {} }) {
       formData.append("category", inferCategory(selectedFile.name || ""));
       formData.append("status", "Active");
 
-      const response = await fetch(`${API_BASE}/documents/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      const response = await fetch(
+      `${API_BASE}/documents/company/${selectedCompany.id}/upload`,
+      {
+          method: "POST",
+          headers: {
+               Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+      }
+       );
 
       const data = await response.json();
 
@@ -666,31 +669,69 @@ export default function DocumentsScreen({ pageOptions = {} }) {
     );
   };
 
-  const handleOpenDocument = async (filePath) => {
+    const handleOpenDocument = async (documentId) => {
     try {
-      const url = buildFileUrl(filePath);
+      const token = getToken();
 
-      if (!url) {
-        Alert.alert("Error", "Invalid file path.");
+      if (!token) {
+        Alert.alert("Session Expired", "Please log in again.");
         return;
       }
 
-      if (Platform.OS === "web") {
-        window.open(url, "_blank");
+      if (!Number.isInteger(Number(documentId)) || Number(documentId) <= 0) {
+        throw new Error("Invalid document ID.");
+      }
+
+      const response = await fetch(
+        `${API_BASE}/documents/${documentId}/download`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Document download failed (${response.status}).`);
+      }
+
+            if (Platform.OS === "web") {
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        const currentDocument = documents.find(
+          (doc) => Number(doc.id) === Number(documentId)
+        );
+
+        const originalFilename =
+          currentDocument?.original_name ||
+          currentDocument?.file_name ||
+          `document-${documentId}`;
+
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = originalFilename;
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
         return;
       }
 
-      const supported = await Linking.canOpenURL(url);
-
-      if (!supported) {
-        Alert.alert("Error", "Cannot open this document.");
-        return;
-      }
-
-      await Linking.openURL(url);
+      throw new Error(
+        "Secure document opening on mobile is not yet implemented."
+      );
     } catch (error) {
       console.error("handleOpenDocument error:", error);
-      Alert.alert("Error", "Failed to open document.");
+
+      if (Platform.OS === "web") {
+        window.alert(error.message || "Failed to open document.");
+      } else {
+        Alert.alert("Error", error.message || "Failed to open document.");
+      }
     }
   };
 
@@ -1038,7 +1079,7 @@ export default function DocumentsScreen({ pageOptions = {} }) {
                       <View style={styles.colActions}>
                         <TouchableOpacity
                           style={styles.actionOpenButton}
-                          onPress={() => handleOpenDocument(doc.file_path)}
+                          onPress={() => handleOpenDocument(doc.id)}
                         >
                           <Text style={styles.actionOpenButtonText}>Open</Text>
                         </TouchableOpacity>
