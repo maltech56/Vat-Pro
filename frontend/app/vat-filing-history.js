@@ -793,7 +793,11 @@ export default function VatFilingHistory({ onNavigate }) {
     });
 
   const formatDate = (value) =>
-    value ? new Date(value).toLocaleDateString() : "-";
+    value
+      ? new Date(value).toLocaleDateString("en-US", {
+        timeZone: "UTC",
+      })
+      : "-";
 
   const formatDateTime = (value) =>
     value ? new Date(value).toLocaleString() : "-";
