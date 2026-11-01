@@ -515,9 +515,10 @@ SET
 
     status = 'draft'
 
-WHERE id = $1
+    WHERE id = $1
+      AND status = 'draft'
 
-RETURNING *
+    RETURNING *
 `,
         [
           existingFiling.id,
@@ -556,7 +557,11 @@ RETURNING *
           JSON.stringify(snapshot.missingDocumentWarnings)
         ]
       );
-
+      if (updateResult.rowCount !== 1) {
+        return res.status(409).json({
+          error: "Filing is no longer editable. Only draft filings may be updated.",
+        });
+      }
       return res.json({
         message: "VAT filing updated successfully",
         filing: mapFilingRow(updateResult.rows[0]),
@@ -1623,8 +1628,15 @@ exports.getFilingPackPdf = async (req, res) => {
 };
 
 exports.lockFiling = async (req, res) => {
+  let client;
   try {
     const { filingId } = req.params;
+
+    if (!req.user?.id) {
+      return res.status(401).json({
+        error: "Authenticated user required to lock a filing.",
+      });
+    }
 
     const packData = await buildFilingPackData(filingId);
 
@@ -1698,11 +1710,15 @@ exports.lockFiling = async (req, res) => {
       });
     }
 
-    const result = await pool.query(
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const result = await client.query(
       `
       UPDATE vat_filings
       SET status = 'locked'
-      WHERE id = $1
+    WHERE id = $1
+      AND status = 'submitted'
 
     RETURNING
     id,
@@ -1725,8 +1741,14 @@ exports.lockFiling = async (req, res) => {
       [filingId]
     );
 
+    if (result.rowCount !== 1) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: "Filing is no longer submitted and cannot be locked.",
+      });
+    }
     // Audit log for filing lock
-    await pool.query(
+    await client.query(
       `
   INSERT INTO audit_activity_log
   (company_id, filing_id, user_id, action, details)
@@ -1735,13 +1757,13 @@ exports.lockFiling = async (req, res) => {
       [
         result.rows[0].company_id,
         filingId,
-        req.user?.id || 0,
+        req.user.id,
         "FILING_LOCKED",
         JSON.stringify({
           previousStatus: currentStatus,
           newStatus: "locked",
           changedAt: new Date().toISOString(),
-          lockedBy: req.user?.id || 0,
+          lockedBy: req.user.id,
           lockedByRole: req.user?.role || "unknown",
           auditScore,
           missingDocumentCount,
@@ -1751,16 +1773,23 @@ exports.lockFiling = async (req, res) => {
       ]
     );
 
+    await client.query('COMMIT');
+
     return res.json({
       message: "Filing locked successfully",
       filing: result.rows[0],
     });
   } catch (error) {
+    if (client) {
+      try { await client.query('ROLLBACK'); } catch (rollbackError) { console.error('Lock rollback failed:', rollbackError); }
+    }
     console.error("lockFiling error:", error);
 
     return res.status(500).json({
       error: "Failed to lock filing",
     });
+  } finally {
+    if (client) client.release();
   }
 };
 
@@ -1802,11 +1831,11 @@ exports.updateFilingStatus = async (req, res) => {
     // Normalize status so "Draft", "SUBMITTED", etc. do not break the backend
     status = String(status || "").toLowerCase().trim();
 
-    const allowedStatuses = ["draft", "submitted", "locked"];
+    const allowedStatuses = ["submitted"];
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
-        error: "Invalid status. Allowed values: draft, submitted, locked",
+        error: "Invalid status. Only submitted is permitted through this endpoint.",
       });
     }
 
@@ -1836,11 +1865,11 @@ exports.updateFilingStatus = async (req, res) => {
 
     const validTransitions = {
       draft: ["submitted"],
-      submitted: ["locked"],
+      submitted: [],
       locked: [],
     };
 
-    if (!validTransitions[currentStatus].includes(status)) {
+    if (!validTransitions[currentStatus]?.includes(status)) {
       return res.status(400).json({
         error: `Invalid status transition from ${currentStatus} to ${status}`,
       });
@@ -1887,13 +1916,22 @@ exports.updateFilingStatus = async (req, res) => {
 
     const result = await pool.query(
       `
-      UPDATE vat_filings
-      SET status = $1
-      WHERE id = $2
-      RETURNING *
-      `,
+  UPDATE vat_filings
+  SET status = $1
+  WHERE id = $2
+    AND (
+      (status = 'draft' AND $1 = 'submitted')
+    )
+  RETURNING *
+  `,
       [status, filingId]
     );
+
+    if (result.rowCount !== 1) {
+      return res.status(409).json({
+        error: "Filing status changed. The requested transition is no longer permitted.",
+      });
+    }
 
     return res.json({
       message: "Filing status updated successfully",
@@ -1908,9 +1946,16 @@ exports.updateFilingStatus = async (req, res) => {
 };
 
 exports.deleteFiling = async (req, res) => {
+  let client;
   try {
     const { filingId } = req.params;
     const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authenticated user required to void a filing.",
+      });
+    }
 
     // Get current filing
     const existingResult = await pool.query(
@@ -1935,18 +1980,29 @@ exports.deleteFiling = async (req, res) => {
       });
     }
 
-    // Soft delete (void)
-    await pool.query(
+    // Soft delete (void) — drafts only
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const voidResult = await client.query(
       `UPDATE vat_filings
-       SET status = 'voided',
-           voided_at = NOW()
-       WHERE id = $1`,
+   SET status = 'voided',
+       voided_at = NOW()
+   WHERE id = $1
+     AND status = 'draft'
+   RETURNING id`,
       [filingId]
     );
 
+    if (voidResult.rowCount !== 1) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: "Filing is no longer a draft and cannot be voided.",
+      });
+    }
+
     // Write audit log
-    if (userId) {
-      await pool.query(
+    await client.query(
         `INSERT INTO audit_activity_log
          (company_id, filing_id, user_id, action, details)
          VALUES ($1, $2, $3, $4, $5)`,
@@ -1961,8 +2017,9 @@ exports.deleteFiling = async (req, res) => {
             voidedAt: new Date().toISOString(),
           }),
         ]
-      );
-    }
+    );
+
+    await client.query('COMMIT');
 
     return res.json({
       message: "Filing voided successfully",
@@ -1970,7 +2027,12 @@ exports.deleteFiling = async (req, res) => {
       status: "voided",
     });
   } catch (error) {
+    if (client) {
+      try { await client.query('ROLLBACK'); } catch (rollbackError) { console.error('Void rollback failed:', rollbackError); }
+    }
     console.error("Error deleting filing:", error);
     return res.status(500).json({ error: "Failed to delete filing" });
+  } finally {
+    if (client) client.release();
   }
 };
