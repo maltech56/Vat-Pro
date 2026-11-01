@@ -1834,6 +1834,15 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
   },
+  actionOrange: {
+    backgroundColor: "#D97706",
+    minWidth: 76,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   actionSlate: {
     backgroundColor: "#475569",
     minWidth: 76,
