@@ -515,9 +515,10 @@ SET
 
     status = 'draft'
 
-WHERE id = $1
+    WHERE id = $1
+      AND status = 'draft'
 
-RETURNING *
+    RETURNING *
 `,
         [
           existingFiling.id,
@@ -556,7 +557,11 @@ RETURNING *
           JSON.stringify(snapshot.missingDocumentWarnings)
         ]
       );
-
+      if (updateResult.rowCount !== 1) {
+        return res.status(409).json({
+          error: "Filing is no longer editable. Only draft filings may be updated.",
+        });
+      }
       return res.json({
         message: "VAT filing updated successfully",
         filing: mapFilingRow(updateResult.rows[0]),
