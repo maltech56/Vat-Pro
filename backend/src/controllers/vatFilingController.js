@@ -1892,13 +1892,24 @@ exports.updateFilingStatus = async (req, res) => {
 
     const result = await pool.query(
       `
-      UPDATE vat_filings
-      SET status = $1
-      WHERE id = $2
-      RETURNING *
-      `,
+  UPDATE vat_filings
+  SET status = $1
+  WHERE id = $2
+    AND (
+      (status = 'draft' AND $1 = 'submitted')
+      OR
+      (status = 'submitted' AND $1 = 'locked')
+    )
+  RETURNING *
+  `,
       [status, filingId]
     );
+
+    if (result.rowCount !== 1) {
+      return res.status(409).json({
+        error: "Filing status changed. The requested transition is no longer permitted.",
+      });
+    }
 
     return res.json({
       message: "Filing status updated successfully",
@@ -1940,14 +1951,22 @@ exports.deleteFiling = async (req, res) => {
       });
     }
 
-    // Soft delete (void)
-    await pool.query(
+    // Soft delete (void) — drafts only
+    const voidResult = await pool.query(
       `UPDATE vat_filings
-       SET status = 'voided',
-           voided_at = NOW()
-       WHERE id = $1`,
+   SET status = 'voided',
+       voided_at = NOW()
+   WHERE id = $1
+     AND status = 'draft'
+   RETURNING id`,
       [filingId]
     );
+
+    if (voidResult.rowCount !== 1) {
+      return res.status(409).json({
+        error: "Filing is no longer a draft and cannot be voided.",
+      });
+    }
 
     // Write audit log
     if (userId) {
