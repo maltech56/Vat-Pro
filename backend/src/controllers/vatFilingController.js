@@ -1632,6 +1632,12 @@ exports.lockFiling = async (req, res) => {
   try {
     const { filingId } = req.params;
 
+    if (!req.user?.id) {
+      return res.status(401).json({
+        error: "Authenticated user required to lock a filing.",
+      });
+    }
+
     const packData = await buildFilingPackData(filingId);
 
     const auditScore = Number(
@@ -1751,13 +1757,13 @@ exports.lockFiling = async (req, res) => {
       [
         result.rows[0].company_id,
         filingId,
-        req.user?.id || 0,
+        req.user.id,
         "FILING_LOCKED",
         JSON.stringify({
           previousStatus: currentStatus,
           newStatus: "locked",
           changedAt: new Date().toISOString(),
-          lockedBy: req.user?.id || 0,
+          lockedBy: req.user.id,
           lockedByRole: req.user?.role || "unknown",
           auditScore,
           missingDocumentCount,
