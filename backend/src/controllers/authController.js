@@ -89,117 +89,105 @@ exports.login = async (req, res) => {
   }
 };
 
+
 exports.register = async (req, res) => {
   let client;
 
   try {
-    const {
-      companyName,
-      email,
-      password,
-      phone
-    } = req.body;
+    const { companyName, email, password, phone, invitationToken } = req.body;
 
-    console.log("REGISTER BODY:", req.body);
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    if (!companyName || !email || !password) {
-      console.log("MISSING FIELD DETECTED");
+    if (!companyName || !normalizedEmail || !password) {
       return res.status(400).json({
         error: "Company name, email and password are required"
       });
     }
 
-    const existingUser = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
-    );
-
-    if (existingUser.rows.length > 0) {
-      console.log("EMAIL ALREADY EXISTS:", email);
-
-      return res.status(400).json({
-        error: "Email already exists"
+    if (typeof invitationToken !== "string" ||
+      !/^[a-f0-9]{64}$/i.test(invitationToken)) {
+      return res.status(403).json({
+        error: "A valid beta invitation is required"
       });
     }
+
+    const crypto = require("node:crypto");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(invitationToken)
+      .digest("hex");
 
     client = await pool.connect();
     await client.query("BEGIN");
 
+    const invitationResult = await client.query(
+      `SELECT id
+       FROM beta_invitations
+       WHERE token_hash = $1
+         AND email = $2
+         AND used_at IS NULL
+         AND expires_at > NOW()
+       FOR UPDATE`,
+      [tokenHash, normalizedEmail]
+    );
+
+    if (invitationResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        error: "Invitation is invalid, expired or already used"
+      });
+    }
+
+    const existingUser = await client.query(
+      "SELECT id FROM users WHERE LOWER(email) = $1",
+      [normalizedEmail]
+    );
+
+    if (existingUser.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "Email already exists"
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const userResult = await client.query(
-      `
-      INSERT INTO users
-      (
-        email,
-        password,
-        role
-      )
-      VALUES
-      (
-        $1,
-        $2,
-        'admin'
-      )
-      RETURNING *
-      `,
-      [email, hashedPassword]
+      `INSERT INTO users (email, password, role)
+       VALUES ($1, $2, 'admin')
+       RETURNING id`,
+      [normalizedEmail, hashedPassword]
     );
 
     const user = userResult.rows[0];
 
     const companyResult = await client.query(
-      `
-      INSERT INTO companies
-      (
-        name,
-        email,
-        phone,
-        trial_start_date,
-        trial_end_date,
-        subscription_status
-      )
-      VALUES
-      (
-        $1,
-        $2,
-        $3,
-        NOW(),
-        NOW() + INTERVAL '14 days',
-        'TRIAL'
-      )
-      RETURNING *
-      `,
-      [
-        companyName,
-        email,
-        phone || null
-      ]
+      `INSERT INTO companies
+       (name, email, phone, trial_start_date,
+        trial_end_date, subscription_status)
+       VALUES ($1, $2, $3, NOW(),
+               NOW() + INTERVAL '14 days', 'TRIAL')
+       RETURNING id, trial_end_date`,
+      [companyName, normalizedEmail, phone || null]
     );
 
     const company = companyResult.rows[0];
 
     await client.query(
-      `
-      INSERT INTO user_companies
-      (
-        user_id,
-        company_id,
-        role
-      )
-      VALUES
-      (
-        $1,
-        $2,
-        'admin'
-      )
-      `,
+      `INSERT INTO user_companies
+       (user_id, company_id, role)
+       VALUES ($1, $2, 'admin')`,
       [user.id, company.id]
     );
 
-    await createDefaultCompanySettings(
-      company.id,
-      client
+    await createDefaultCompanySettings(company.id, client);
+
+    await client.query(
+      `UPDATE beta_invitations
+       SET used_at = NOW()
+       WHERE id = $1 AND used_at IS NULL`,
+      [invitationResult.rows[0].id]
     );
 
     await client.query("COMMIT");
@@ -212,25 +200,26 @@ exports.register = async (req, res) => {
     });
 
   } catch (error) {
-
     if (client) {
-      await client.query("ROLLBACK");
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("REGISTER ROLLBACK ERROR:", rollbackError);
+      }
     }
 
     console.error("REGISTER ERROR:", error);
+
 
     return res.status(500).json({
       error: "Registration failed"
     });
 
   } finally {
-
-    if (client) {
-      client.release();
-    }
-
+    if (client) client.release();
   }
 };
+
 
 // ================= CHANGE PASSWORD =================
 exports.changePassword = async (req, res) => {
