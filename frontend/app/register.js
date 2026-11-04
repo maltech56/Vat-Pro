@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 export default function Register() {
   const router = useRouter();
 
+  const [invitationToken, setInvitationToken] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -57,6 +58,7 @@ export default function Register() {
             email,
             password,
             phone,
+            invitationToken: invitationToken.trim(),
           }),
         }
       );
@@ -156,6 +158,15 @@ export default function Register() {
       <Text style={styles.title}>
         Start Free Trial
       </Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Invitation Code"
+        value={invitationToken}
+        onChangeText={setInvitationToken}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
 
       <TextInput
         style={styles.input}
