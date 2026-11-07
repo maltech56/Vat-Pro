@@ -30,7 +30,7 @@ exports.login = async (req, res) => {
     console.log("DB INFO:", dbInfo.rows[0]);
 
     const result = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
+      "SELECT * FROM users WHERE LOWER(email) = LOWER($1)",
       [email]
     );
 
