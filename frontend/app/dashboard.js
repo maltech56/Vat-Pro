@@ -260,7 +260,13 @@ export default function Dashboard() {
   }, []);
 
 
-  const user = getUser();
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  const user = hydrated ? getUser() : null;
   const [companies, setCompanies] = useState([]);
   const [companySettings, setCompanySettings] = useState(null);
   const { selectedCompany, setSelectedCompany, companyReady } = useCompany();
