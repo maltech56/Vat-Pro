@@ -94,12 +94,12 @@ exports.register = async (req, res) => {
   let client;
 
   try {
-    const { companyName, email, password, phone, invitationToken } = req.body;
+    const { fullName, companyName, email, password, phone, invitationToken } = req.body;
 
     const normalizedEmail =
       typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    if (!companyName || !normalizedEmail || !password) {
+    if (typeof fullName !== 'string' || !fullName.trim() || !companyName || !normalizedEmail || !password) {
       return res.status(400).json({
         error: "Company name, email and password are required"
       });
@@ -154,10 +154,10 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const userResult = await client.query(
-      `INSERT INTO users (email, password, role)
-       VALUES ($1, $2, 'admin')
+      `INSERT INTO users (name, email, password, role)
+       VALUES ($1, $2, $3, 'admin')
        RETURNING id`,
-      [normalizedEmail, hashedPassword]
+      [fullName.trim(), normalizedEmail, hashedPassword]
     );
 
     const user = userResult.rows[0];
