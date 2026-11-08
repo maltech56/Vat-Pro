@@ -14,6 +14,7 @@ export default function Register() {
   const router = useRouter();
 
   const [invitationToken, setInvitationToken] = useState("");
+  const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -22,6 +23,12 @@ export default function Register() {
   const [registrationComplete, setRegistrationComplete] = useState(false);
 
   const handleRegister = async () => {
+
+    if (!fullName.trim()) {
+      Alert.alert("Registration", "Full Name is required.");
+      return;
+    }
+
     console.log("HANDLE REGISTER STARTED");
 
     console.log("FORM VALUES:", {
@@ -54,6 +61,7 @@ export default function Register() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            fullName,
             companyName,
             email,
             password,
@@ -175,6 +183,12 @@ export default function Register() {
         onChangeText={setCompanyName}
       />
 
+      <TextInput
+        style={styles.input}
+        placeholder="Full Name"
+        value={fullName}
+        onChangeText={setFullName}
+      />
       <TextInput
         style={styles.input}
         placeholder="Email"
