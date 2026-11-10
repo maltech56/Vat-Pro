@@ -28,6 +28,25 @@ exports.createCompany = async (req, res) => {
     client = await pool.connect();
     await client.query("BEGIN");
 
+    // Prevent concurrent company creation for the same user.
+    await client.query(
+      "SELECT id FROM users WHERE id = $1 FOR UPDATE",
+      [userId]
+    );
+
+    const existingCompany = await client.query(
+      "SELECT 1 FROM user_companies WHERE user_id = $1 LIMIT 1",
+      [userId]
+    );
+
+    if (existingCompany.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        code: "ADDITIONAL_COMPANY_RESTRICTED",
+        error: "Additional company creation requires administrator approval."
+      });
+    }
+
     const companyResult = await client.query(
       `
       INSERT INTO companies (
@@ -37,9 +56,12 @@ exports.createCompany = async (req, res) => {
   vat_number,
   email,
   phone,
-  address
+  address,
+  trial_start_date,
+  trial_end_date,
+  subscription_status
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW() + INTERVAL '30 days', 'TRIAL')
 RETURNING *
       `,
       [

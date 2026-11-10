@@ -3,6 +3,7 @@ const router = express.Router();
 const companyController = require("../controllers/companyController");
 const authMiddleware = require("../middleware/auth");
 const requireRole = require("../middleware/requireRole");
+const requireActiveSubscription = require("../middleware/requireActiveSubscription");
 
 // Create company
 router.post("/", authMiddleware, companyController.createCompany);
@@ -23,6 +24,7 @@ router.put(
   "/:companyId/settings",
   authMiddleware,
   requireRole("admin"),
+  requireActiveSubscription,
   companyController.updateCompanySettings
 );
 

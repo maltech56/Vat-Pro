@@ -8,7 +8,12 @@ const authMiddleware = require("../middleware/authMiddleware");
 const demoController = require("../controllers/demoController");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-router.post("/seed", authMiddleware, demoController.seedDemoData);
+router.post("/seed", authMiddleware, (req, res) => {
+  return res.status(403).json({
+    code: "DEMO_SEED_DISABLED",
+    error: "Demo data creation is unavailable during beta."
+  });
+});
 
 router.post("/demo-request", async (req, res) => {
 

@@ -1,3 +1,32 @@
+const subscriptionPool = require("../config/db");
+const requireActiveSubscription = require("../middleware/requireActiveSubscription");
+
+async function checkBulkLinkSubscription(req, res, next) {
+  const transactionId = Number(req.body?.transactionId);
+
+  if (!Number.isSafeInteger(transactionId) || transactionId <= 0) {
+    return res.status(400).json({ error: "Invalid transaction ID" });
+  }
+
+  try {
+    const result = await subscriptionPool.query(
+      "SELECT company_id FROM transactions WHERE id = $1",
+      [transactionId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    req.companyId = result.rows[0].company_id;
+    return requireActiveSubscription(req, res, next);
+  } catch (error) {
+    console.error("Bulk link subscription check:", error);
+    return res.status(500).json({
+      error: "Unable to validate document subscription"
+    });
+  }
+}
 const express = require("express");
 const router = express.Router();
 
@@ -76,6 +105,7 @@ router.patch(
 router.patch(
   "/bulk-link",
   authMiddleware,
+  checkBulkLinkSubscription,
   documentController.bulkLinkDocuments
 );
 

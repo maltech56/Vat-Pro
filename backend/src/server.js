@@ -16,15 +16,16 @@ const importTemplateRoutes = require("./routes/importTemplateRoutes");
 const importBatchRoutes = require("./routes/importBatchRoutes");
 const importRoutes = require("./routes/importRoutes");
 const auditRoutes = require("./routes/auditRoutes");
-const quickbooksRoutes = require("./routes/quickbooksRoutes");
+
 const demoRoutes = require("./routes/demoRoutes");
 const leadRoutes = require("./routes/leadRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const vatRoutes = require("./routes/vatRoutes");
 
-console.log("✅ activityRoutes imported");
+console.log("activityRoutes imported");
 
 dotenv.config();
+const quickbooksEnabled = process.env.ENABLE_QUICKBOOKS === "true";
 
 const app = express();
 
@@ -76,10 +77,12 @@ app.use(
 app.use(express.json());
 app.use("/api/demo", demoRoutes);
 app.use("/api/leads", leadRoutes);
+app.use("/api/admin", require("./routes/trialAdminRoutes"));
+
 app.use("/api/activities", activityRoutes);
 
 app.get("/", (req, res) => {
-  res.send("VAT Pro Backend Running 🚀");
+  res.send("VAT Pro Backend Running");
 });
 
 app.use((req, res, next) => {
@@ -102,17 +105,23 @@ app.use("/api/import-batches", importBatchRoutes);
 app.use("/api/imports", importRoutes);
 app.use("/api/audit", auditRoutes);
 
-app.use(
-  "/api/quickbooks",
-  quickbooksRoutes
-);
+if (quickbooksEnabled) {
+  app.use("/api/quickbooks", require("./routes/quickbooksRoutes"));
+} else {
+  app.use("/api/quickbooks", (req, res) =>
+    res.status(503).json({
+      code: "QUICKBOOKS_DISABLED",
+      error: "QuickBooks integration is unavailable during beta."
+    })
+  );
+}
 
 app.use(
   "/api/vat",
   vatRoutes
 );
 
-console.log("QUICKBOOKS ROUTES MOUNTED");
+console.log(quickbooksEnabled ? "QuickBooks enabled" : "QuickBooks disabled for beta");
 
 // Handle file upload validation errors
 app.use((err, req, res, next) => {

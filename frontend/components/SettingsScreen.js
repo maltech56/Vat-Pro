@@ -86,7 +86,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
   });
 
   useEffect(() => {
-    // 🔥 FULL RESET on company change
+    // ðŸ”¥ FULL RESET on company change
 
     setCompanyForm({
       companyName: "",
@@ -810,7 +810,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
 
       <CompanyBrandingSettings selectedCompany={selectedCompany} />
 
-      <View style={styles.sectionCard}>
+      {false && (<View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>Integrations</Text>
 
         <Text style={styles.label}>
@@ -833,7 +833,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
                 marginBottom: 10,
               }}
             >
-              🟢 QuickBooks Connected
+              ðŸŸ¢ QuickBooks Connected
             </Text>
 
             {syncing && (
@@ -936,7 +936,7 @@ export default function SettingsScreen({ selectedCompany: selectedCompanyProp })
             </Text>
           </TouchableOpacity>
         )}
-      </View>
+      </View>)}
 
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>VAT Preferences</Text>

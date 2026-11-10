@@ -167,7 +167,7 @@ exports.register = async (req, res) => {
        (name, email, phone, trial_start_date,
         trial_end_date, subscription_status)
        VALUES ($1, $2, $3, NOW(),
-               NOW() + INTERVAL '14 days', 'TRIAL')
+               NOW() + INTERVAL '30 days', 'TRIAL')
        RETURNING id, trial_end_date`,
       [companyName, normalizedEmail, phone || null]
     );

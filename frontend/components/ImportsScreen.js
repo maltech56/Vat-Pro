@@ -82,7 +82,7 @@ export default function ImportsScreen() {
   useEffect(() => {
     if (!companyReady) return;
 
-    // ✅ CLEAR EVERYTHING
+    // âœ… CLEAR EVERYTHING
     setParsedRows([]);
     setColumns([]);
     setReviewRows([]);
@@ -106,7 +106,7 @@ export default function ImportsScreen() {
       return;
     }
 
-    // ✅ RELOAD DATA
+    // âœ… RELOAD DATA
     fetchTemplates();
     fetchImportHistory();
   }, [companyReady, selectedCompany?.id, selectedSource]);
@@ -933,11 +933,6 @@ export default function ImportsScreen() {
       key: "PDF",
       title: "PDF Import",
       subtitle: "Stage PDF files for OCR-based extraction",
-    },
-    {
-      key: "QuickBooks",
-      title: "QuickBooks",
-      subtitle: "Connect accounting data in a future upgrade",
     },
   ];
 
@@ -1782,7 +1777,7 @@ export default function ImportsScreen() {
 
           {ocrWarnings.map((warning, index) => (
             <Text key={`ocr-warning-${index}`} style={styles.ocrWarningText}>
-              • {warning}
+              â€¢ {warning}
             </Text>
           ))}
 
@@ -2011,7 +2006,7 @@ export default function ImportsScreen() {
                   </Text>
 
                   {!!row.errors?.length && (
-                    <Text style={styles.errorText}>{row.errors.join(" • ")}</Text>
+                    <Text style={styles.errorText}>{row.errors.join(" â€¢ ")}</Text>
                   )}
                 </View>
               </View>

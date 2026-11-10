@@ -45,6 +45,12 @@ module.exports = (...allowedRoles) => {
       }
 
       req.userCompanyRole = userRole;
+      req.companyId = companyId;
+
+      if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+        return require("./requireActiveSubscription")(req, res, next);
+      }
+
       next();
     } catch (error) {
       console.error("companyAccess error:", error);
