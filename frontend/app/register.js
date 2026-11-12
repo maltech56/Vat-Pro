@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { API_BASE } from "../src/api/config";
 import {
   View,
@@ -124,7 +124,7 @@ export default function Register() {
             marginBottom: 20,
           }}
         >
-          ✓ Trial Account Created Successfully
+          âœ“ Trial Account Created Successfully
         </Text>
 
         <Text
@@ -227,7 +227,7 @@ export default function Register() {
         }}
       >
         <Text style={styles.buttonText}>
-          Activate 14-Day Trial
+          Activate 30-Day Free Trial
         </Text>
       </TouchableOpacity>
 
@@ -290,3 +290,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
