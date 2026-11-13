@@ -1,4 +1,5 @@
-﻿import React, { useState } from "react";
+﻿
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -50,7 +51,11 @@ export default function LoginScreen({
 
   return (
     <View style={styles.page}>
-      <View style={styles.leftPanel}>
+      <ScrollView
+        style={styles.leftPanel}
+        contentContainerStyle={styles.leftPanelContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.brand}>
           MALTECH
         </Text>
@@ -72,36 +77,31 @@ export default function LoginScreen({
 
         <View style={styles.featureList}>
           <Text style={styles.feature}>
-            âœ“ Multi-Company Management
+            {"\u2713"} Multi-Company Management
           </Text>
 
           <Text style={styles.feature}>
-            âœ“ VAT Return Preparation
+            {"\u2713"} VAT Return Preparation
           </Text>
 
           <Text style={styles.feature}>
-            âœ“ Audit Readiness Dashboard
+            {"\u2713"} Audit Readiness Dashboard
           </Text>
 
           <Text style={styles.feature}>
-            âœ“ Document Management
+            {"\u2713"} Document Management
           </Text>
 
           <Text style={styles.feature}>
-            âœ“ Filing Pack Generation
-          </Text>
-
-          <Text style={styles.feature}>
-            âœ“ QuickBooks Integration
+            {"\u2713"} Filing Pack Generation
           </Text>
         </View>
-      </View>
+      </ScrollView>
 
       <View style={styles.rightPanel}>
         <ScrollView
-          contentContainerStyle={
-            styles.scrollContainer
-          }
+          style={styles.rightScroll}
+          contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.loginCard}>
@@ -171,7 +171,11 @@ const styles = StyleSheet.create({
   leftPanel: {
     flex: 1,
     backgroundColor: "#0F3D91",
-    padding: 56,
+  },
+
+  leftPanelContent: {
+    flexGrow: 1,
+    padding: 40,
     justifyContent: "center",
   },
 
@@ -225,10 +229,16 @@ const styles = StyleSheet.create({
     padding: 40,
   },
 
+  rightScroll: {
+    width: "100%",
+    flex: 1,
+  },
+
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
-    width: "100%",
+    alignItems: "center",
+    paddingVertical: 20,
   },
 
   loginCard: {
