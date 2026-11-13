@@ -134,7 +134,7 @@ export default function Register() {
             marginBottom: 30,
           }}
         >
-          Your 14-day Maltech VAT Pro trial is now active.
+          Your 30-day Maltech VAT Pro trial is now active.
           {"\n\n"}
           Please sign in using your email and password.
         </Text>
@@ -290,4 +290,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
 

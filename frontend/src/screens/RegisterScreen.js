@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   View,
   Text,
@@ -120,7 +120,7 @@ export default function RegisterScreen({
         onPress={handleRegister}
       >
         <Text style={styles.buttonText}>
-          Activate 14-Day Trial
+          Activate 30-Day Trial
         </Text>
       </TouchableOpacity>
 

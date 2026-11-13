@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   View,
   Text,
@@ -72,27 +72,27 @@ export default function LoginScreen({
 
         <View style={styles.featureList}>
           <Text style={styles.feature}>
-            ✓ Multi-Company Management
+            âœ“ Multi-Company Management
           </Text>
 
           <Text style={styles.feature}>
-            ✓ VAT Return Preparation
+            âœ“ VAT Return Preparation
           </Text>
 
           <Text style={styles.feature}>
-            ✓ Audit Readiness Dashboard
+            âœ“ Audit Readiness Dashboard
           </Text>
 
           <Text style={styles.feature}>
-            ✓ Document Management
+            âœ“ Document Management
           </Text>
 
           <Text style={styles.feature}>
-            ✓ Filing Pack Generation
+            âœ“ Filing Pack Generation
           </Text>
 
           <Text style={styles.feature}>
-            ✓ QuickBooks Integration
+            âœ“ QuickBooks Integration
           </Text>
         </View>
       </View>
@@ -147,7 +147,7 @@ export default function LoginScreen({
               onPress={onShowRegister}
             >
               <Text style={styles.trialButtonText}>
-                Start Free 14-Day Trial
+                Start Free 30-Day Trial
               </Text>
             </TouchableOpacity>
 
