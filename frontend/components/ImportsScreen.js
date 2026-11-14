@@ -1102,7 +1102,7 @@ export default function ImportsScreen() {
       const importEndpoint =
         selectedSource === "PDF"
           ? `${API_BASE}/imports/pdf-ocr`
-          : `${API_BASE}/imports/upload`;
+          : `${API_BASE}/imports/company/${selectedCompany.id}/upload`;
 
       const response = await fetch(importEndpoint, {
         method: "POST",
