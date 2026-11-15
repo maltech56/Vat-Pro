@@ -63,6 +63,7 @@ export default function ImportsScreen() {
   const [lastImportBatch, setLastImportBatch] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [undoingBatchId, setUndoingBatchId] = useState(null);
+  const [resumingBatchId, setResumingBatchId] = useState(null);
 
   const [columnMapping, setColumnMapping] = useState({
     amount: "",
@@ -269,6 +270,67 @@ export default function ImportsScreen() {
     } catch (error) {
       console.error("loadBatchDetails error:", error);
     }
+  };
+
+  const handleResumeImport = (batch) => {
+    if (String(batch.status).toLowerCase() !== "preview_ready") {
+      Alert.alert(
+        "Import Unavailable",
+        "This batch is not ready for import."
+      );
+      return;
+    }
+
+    if (Number(batch.company_id) !== Number(selectedCompany?.id)) {
+      Alert.alert(
+        "Company Mismatch",
+        "Select the correct company first."
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Confirm Import",
+      `Import ${batch.valid_rows || 0} valid row(s) from ${batch.file_name}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Import",
+          onPress: async () => {
+            try {
+              setResumingBatchId(batch.id);
+
+              const response = await fetch(
+                `${API_BASE}/imports/confirm`,
+                {
+                  method: "POST",
+                  headers: getAuthHeaders(true),
+                  body: JSON.stringify({ batchId: batch.id }),
+                }
+              );
+
+              const data = await response.json().catch(() => ({}));
+
+              if (!response.ok) {
+                throw new Error(data.error || "Import failed");
+              }
+
+              await fetchImportHistory();
+              await loadBatchDetails(batch.id);
+
+              Alert.alert(
+                "Import Complete",
+                `Imported ${data.insertedCount || 0} row(s).`
+              );
+            } catch (error) {
+              Alert.alert("Import Error", error.message);
+            } finally {
+              setResumingBatchId(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleUndoBatch = async (batchId) => {
