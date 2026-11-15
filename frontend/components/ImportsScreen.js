@@ -2141,19 +2141,23 @@ export default function ImportsScreen() {
             {selectedBatchItems.length === 0 ? (
               <Text style={styles.emptyStateText}>No batch items found.</Text>
             ) : (
-              selectedBatchItems.map((item, index) => (
+              selectedBatchItems.map((item, index) => {
+              const parsed = typeof item.parsed_data === "string"
+                ? JSON.parse(item.parsed_data)
+                : item.parsed_data || {};
+              return (
                 <View
                   key={`${item.id || item.rowIndex || index}-${index}`}
                   style={styles.batchItemRow}
                 >
                   <Text style={styles.batchItemTitle}>
-                    Row {item.row_index ?? item.rowIndex ?? index + 1}:{" "}
-                    {item.description || "No description"}
+                    Row {item.row_number ?? index + 1}:{" "}
+                    {parsed.description || "No description"}
                   </Text>
                   <Text style={styles.batchItemSubtext}>
-                    {item.transaction_date || item.transactionDate || "-"} |{" "}
-                    {formatCurrency(Number(item.amount || 0))} |{" "}
-                    {item.type || "sale"} | {item.classification || "taxable"} |{" "}
+                    {parsed.transactionDate || "-"} |{" "}
+                    {formatCurrency(Number(parsed.amount || 0))} |{" "}
+                    {parsed.type || "sale"} | {parsed.classification || "taxable"} |{" "}
                     {getBatchStatusText(item.status)}
                   </Text>
                   {!!item.error_message && (
@@ -2163,7 +2167,8 @@ export default function ImportsScreen() {
                     <Text style={styles.errorText}>{item.errorMessage}</Text>
                   )}
                 </View>
-              ))
+              );
+            })
             )}
           </View>
         </View>
