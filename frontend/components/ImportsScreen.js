@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { getToken } from "../src/utils/session";
@@ -273,64 +274,74 @@ export default function ImportsScreen() {
   };
 
   const handleResumeImport = (batch) => {
-    if (String(batch.status).toLowerCase() !== "preview_ready") {
-      Alert.alert(
-        "Import Unavailable",
-        "This batch is not ready for import."
-      );
+    const showMessage = (title, message) => {
+      if (Platform.OS === "web") {
+        window.alert(`${title}: ${message}`);
+      } else {
+        Alert.alert(title, message);
+      }
+    };
+
+    if (String(batch.status || "").toLowerCase() !== "preview_ready") {
+      showMessage("Import Unavailable", "This batch is not ready for import.");
       return;
     }
 
-    if (Number(batch.company_id) !== Number(selectedCompany?.id)) {
-      Alert.alert(
-        "Company Mismatch",
-        "Select the correct company first."
-      );
+    if (
+      !selectedCompany?.id ||
+      !batch.company_id ||
+      Number(batch.company_id) !== Number(selectedCompany.id)
+    ) {
+      showMessage("Company Mismatch", "Select the correct company first.");
       return;
     }
 
-    Alert.alert(
-      "Confirm Import",
-      `Import ${batch.valid_rows || 0} valid row(s) from ${batch.file_name}?`,
-      [
+    const performImport = async () => {
+      try {
+        setResumingBatchId(batch.id);
+
+        const response = await fetch(
+          `${API_BASE}/imports/confirm`,
+          {
+            method: "POST",
+            headers: getAuthHeaders(true),
+            body: JSON.stringify({ batchId: batch.id }),
+          }
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || "Import failed");
+        }
+
+        await fetchImportHistory();
+        await loadBatchDetails(batch.id);
+
+        showMessage(
+          "Import Complete",
+          `Imported ${data.insertedCount || 0} row(s).`
+        );
+      } catch (error) {
+        showMessage("Import Error", error.message);
+      } finally {
+        setResumingBatchId(null);
+      }
+    };
+
+    const message =
+      `Import ${batch.valid_rows || 0} valid row(s) from ${batch.file_name}?`;
+
+    if (Platform.OS === "web") {
+      if (window.confirm(message)) {
+        void performImport();
+      }
+    } else {
+      Alert.alert("Confirm Import", message, [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Import",
-          onPress: async () => {
-            try {
-              setResumingBatchId(batch.id);
-
-              const response = await fetch(
-                `${API_BASE}/imports/confirm`,
-                {
-                  method: "POST",
-                  headers: getAuthHeaders(true),
-                  body: JSON.stringify({ batchId: batch.id }),
-                }
-              );
-
-              const data = await response.json().catch(() => ({}));
-
-              if (!response.ok) {
-                throw new Error(data.error || "Import failed");
-              }
-
-              await fetchImportHistory();
-              await loadBatchDetails(batch.id);
-
-              Alert.alert(
-                "Import Complete",
-                `Imported ${data.insertedCount || 0} row(s).`
-              );
-            } catch (error) {
-              Alert.alert("Import Error", error.message);
-            } finally {
-              setResumingBatchId(null);
-            }
-          },
-        },
-      ]
-    );
+        { text: "Import", onPress: performImport },
+      ]);
+    }
   };
 
   const handleUndoBatch = async (batchId) => {
