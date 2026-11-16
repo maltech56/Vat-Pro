@@ -2156,6 +2156,27 @@ export default function ImportsScreen() {
                       <Text style={styles.historyViewButtonText}>View Batch</Text>
                     </TouchableOpacity>
 
+                    {String(batch.status || "").toLowerCase() === "preview_ready" &&
+                      ["csv", "xls", "xlsx"].some((type) =>
+                        String(batch.file_name || "")
+                          .toLowerCase()
+                          .endsWith(`.${type}`)
+                      ) && (
+                        <TouchableOpacity
+                          style={styles.historyViewButton}
+                          onPress={() => handleResumeImport(batch)}
+                          disabled={resumingBatchId !== null}
+                        >
+                          {resumingBatchId === batch.id ? (
+                            <ActivityIndicator />
+                          ) : (
+                            <Text style={styles.historyViewButtonText}>
+                              Resume Import
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+
                     {!isUndone && (
                       <TouchableOpacity
                         style={styles.historyUndoButton}
