@@ -10,10 +10,13 @@ exports.getOverview = async (req, res) => {
     let sql = `
       SELECT
         COALESCE(SUM(CASE WHEN type = 'sale' THEN amount ELSE 0 END), 0) AS total_sales,
+        COALESCE(SUM(CASE WHEN type = 'sale' AND vat_classification = 'taxable' THEN amount ELSE 0 END), 0) AS taxable_sales,
+        COALESCE(SUM(CASE WHEN type = 'sale' AND vat_classification IN ('zero_rated', 'zero-rated') THEN amount ELSE 0 END), 0) AS zero_rated_sales,
+        COALESCE(SUM(CASE WHEN type = 'sale' AND vat_classification = 'exempt' THEN amount ELSE 0 END), 0) AS exempt_sales,
         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expenses,
         COUNT(*) AS transaction_count,
         COALESCE(SUM(CASE WHEN type = 'sale' THEN vat_amount ELSE 0 END), 0) AS output_vat,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN vat_amount ELSE 0 END), 0) AS input_vat
+        COALESCE(SUM(CASE WHEN type IN ('purchase', 'expense') AND vat_classification = 'taxable' THEN vat_amount ELSE 0 END), 0) AS input_vat
       FROM transactions
       WHERE company_id = $1
     `;
@@ -71,6 +74,9 @@ exports.getOverview = async (req, res) => {
 
     res.json({
       totalSales,
+      taxableSales: Number(row.taxable_sales || 0),
+      zeroRatedSales: Number(row.zero_rated_sales || 0),
+      exemptSales: Number(row.exempt_sales || 0),
       totalExpenses,
       transactionCount,
       outputVAT,
