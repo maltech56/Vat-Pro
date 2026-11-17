@@ -28,6 +28,7 @@ dotenv.config();
 const quickbooksEnabled = process.env.ENABLE_QUICKBOOKS === "true";
 
 const app = express();
+app.set('trust proxy', 1);
 
 
 
